@@ -1,0 +1,72 @@
+environment: staging
+
+application:
+  name: ecommerce-bigdata-pipeline
+  log_level: INFO
+  timezone: UTC
+
+data_generator:
+  enabled: true
+  interval_seconds: 2
+  events_per_batch: 25
+  output_path: data/raw
+  generate_out_of_order_events: true
+  out_of_order_probability: 0.10
+
+flume:
+  enabled: true
+  config_path: configs/flume/flume-conf.properties
+  source_type: exec
+  input_path: data/raw
+  channel_type: file
+  sink_type: hdfs
+
+hadoop:
+  namenode_host: namenode
+  namenode_port: 9000
+  hdfs_uri: hdfs://namenode:9000
+  replication_factor: 2
+  raw_data_path: /data/raw
+  processed_data_path: /data/processed
+
+hdfs:
+  enabled: true
+  raw_path: /data/raw
+  clean_path: /data/processed/clean
+  curated_path: /data/processed/curated
+  replication_factor: 2
+
+flink:
+  enabled: true
+  job_name: ecommerce-streaming-job
+  parallelism: 2
+  checkpoint_interval_ms: 60000
+  watermark_out_of_orderness_seconds: 10
+  sliding_window_size_seconds: 60
+  sliding_window_slide_seconds: 10
+
+hbase:
+  enabled: true
+  host: hbase
+  port: 16000
+  namespace: ecommerce
+  alert_table: realtime_alerts
+
+spark:
+  enabled: true
+  application_name: ecommerce-batch-processing
+  master: local[*]
+  shuffle_partitions: 8
+  input_path: /data/raw
+  clean_path: /data/processed/clean
+  curated_path: /data/processed/curated
+
+hive:
+  enabled: true
+  database: ecommerce_dw
+  warehouse_path: /user/hive/warehouse/ecommerce_dw.db
+
+monitoring:
+  enabled: true
+  metrics_enabled: true
+  healthcheck_enabled: true

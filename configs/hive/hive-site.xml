@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Hive Metastore -->
+    <property>
+        <name>hive.metastore.uris</name>
+        <value>thrift://hive-metastore:9083</value>
+    </property>
+
+    <property>
+        <name>hive.metastore.thrift.port</name>
+        <value>9083</value>
+    </property>
+
+    <!-- Warehouse principal no HDFS -->
+    <property>
+        <name>hive.metastore.warehouse.dir</name>
+        <value>hdfs://namenode:9000/user/hive/warehouse</value>
+    </property>
+
+    <!-- Warehouse para tabelas externas -->
+    <property>
+        <name>hive.metastore.warehouse.external.dir</name>
+        <value>hdfs://namenode:9000/data/warehouse</value>
+    </property>
+
+    <!-- Engine de execução -->
+    <property>
+        <name>hive.execution.engine</name>
+        <value>mr</value>
+    </property>
+
+    <!-- Particionamento dinâmico -->
+    <property>
+        <name>hive.exec.dynamic.partition</name>
+        <value>true</value>
+    </property>
+
+    <property>
+        <name>hive.exec.dynamic.partition.mode</name>
+        <value>nonstrict</value>
+    </property>
+
+    <!-- Formato de armazenamento analítico -->
+    <property>
+        <name>hive.default.fileformat</name>
+        <value>PARQUET</value>
+    </property>
+
+    <property>
+        <name>hive.default.fileformat.managed</name>
+        <value>PARQUET</value>
+    </property>
+
+    <!-- Compressão -->
+    <property>
+        <name>hive.exec.compress.output</name>
+        <value>true</value>
+    </property>
+
+    <property>
+        <name>parquet.compression</name>
+        <value>SNAPPY</value>
+    </property>
+
+    <!-- Metastore -->
+    <property>
+        <name>hive.metastore.schema.verification</name>
+        <value>false</value>
+    </property>
+
+    <property>
+        <name>hive.metastore.event.db.notification.api.auth</name>
+        <value>false</value>
+    </property>
+
+    <!-- Estatísticas utilizadas pelo otimizador -->
+    <property>
+        <name>hive.stats.autogather</name>
+        <value>true</value>
+    </property>
+
+    <property>
+        <name>hive.stats.fetch.column.stats</name>
+        <value>true</value>
+    </property>
+
+    <property>
+        <name>hive.stats.fetch.partition.stats</name>
+        <value>true</value>
+    </property>
+
+    <!-- Configuração de concorrência -->
+    <property>
+        <name>hive.support.concurrency</name>
+        <value>false</value>
+    </property>
+
+    <!-- Timezone da camada analítica -->
+    <property>
+        <name>hive.local.time.zone</name>
+        <value>UTC</value>
+    </property>
+
+    <!-- Integração com HDFS -->
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://namenode:9000</value>
+    </property>
+
+</configuration>
