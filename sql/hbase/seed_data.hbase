@@ -1,0 +1,106 @@
+put 'streaming_metrics',
+    'CLICK#2026-09-12T23:00:00Z#product-001',
+    'metrics:event_count',
+    '125'
+
+put 'streaming_metrics',
+    'CLICK#2026-09-12T23:00:00Z#product-001',
+    'metrics:metric_value',
+    '125.0'
+
+put 'streaming_metrics',
+    'CLICK#2026-09-12T23:00:00Z#product-001',
+    'metrics:window_start',
+    '2026-09-12T23:00:00Z'
+
+put 'streaming_metrics',
+    'CLICK#2026-09-12T23:00:00Z#product-001',
+    'metrics:window_end',
+    '2026-09-12T23:01:00Z'
+
+put 'streaming_metrics',
+    'CLICK#2026-09-12T23:00:00Z#product-001',
+    'metadata:event_type',
+    'CLICK'
+
+put 'streaming_metrics',
+    'CLICK#2026-09-12T23:00:00Z#product-001',
+    'metadata:aggregation_key',
+    'product-001'
+
+
+put 'streaming_alerts',
+    'ALERT#2026-09-12T23:01:00Z#alert-001',
+    'alert:alert_id',
+    'alert-001'
+
+put 'streaming_alerts',
+    'ALERT#2026-09-12T23:01:00Z#alert-001',
+    'alert:alert_type',
+    'HIGH_CLICK_VOLUME'
+
+put 'streaming_alerts',
+    'ALERT#2026-09-12T23:01:00Z#alert-001',
+    'alert:severity',
+    'WARNING'
+
+put 'streaming_alerts',
+    'ALERT#2026-09-12T23:01:00Z#alert-001',
+    'alert:message',
+    'Volume elevado de cliques detectado para o produto product-001'
+
+put 'streaming_alerts',
+    'ALERT#2026-09-12T23:01:00Z#alert-001',
+    'event:event_id',
+    'event-000001'
+
+put 'streaming_alerts',
+    'ALERT#2026-09-12T23:01:00Z#alert-001',
+    'event:event_type',
+    'CLICK'
+
+put 'streaming_alerts',
+    'ALERT#2026-09-12T23:01:00Z#alert-001',
+    'metadata:product_id',
+    'product-001'
+
+
+put 'event_realtime',
+    'CLICK#event-000001',
+    'event:event_id',
+    'event-000001'
+
+put 'event_realtime',
+    'CLICK#event-000001',
+    'event:event_type',
+    'CLICK'
+
+put 'event_realtime',
+    'CLICK#event-000001',
+    'event:event_timestamp',
+    '2026-09-12T23:00:45Z'
+
+put 'event_realtime',
+    'CLICK#event-000001',
+    'entity:customer_id',
+    'customer-001'
+
+put 'event_realtime',
+    'CLICK#event-000001',
+    'entity:product_id',
+    'product-001'
+
+put 'event_realtime',
+    'CLICK#event-000001',
+    'entity:session_id',
+    'session-001'
+
+put 'event_realtime',
+    'CLICK#event-000001',
+    'metadata:page',
+    'product-detail'
+
+put 'event_realtime',
+    'CLICK#event-000001',
+    'metadata:action',
+    'view'
