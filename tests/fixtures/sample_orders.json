@@ -1,0 +1,30 @@
+[
+  {
+    "event_id": "order-000001",
+    "event_type": "ORDER",
+    "event_timestamp": "2026-09-12T22:02:00Z",
+    "ingestion_timestamp": "2026-09-12T22:02:03Z",
+    "customer_id": "customer-000001",
+    "session_id": "session-000001",
+    "order_id": "order-000001",
+    "product_id": "product-000001",
+    "quantity": 2,
+    "unit_price": 149.90,
+    "total_amount": 299.80,
+    "status": "COMPLETED"
+  },
+  {
+    "event_id": "order-000002",
+    "event_type": "ORDER",
+    "event_timestamp": "2026-09-12T22:03:00Z",
+    "ingestion_timestamp": "2026-09-12T22:03:04Z",
+    "customer_id": "customer-000002",
+    "session_id": "session-000002",
+    "order_id": "order-000002",
+    "product_id": "product-000002",
+    "quantity": 1,
+    "unit_price": 89.90,
+    "total_amount": 89.90,
+    "status": "COMPLETED"
+  }
+]

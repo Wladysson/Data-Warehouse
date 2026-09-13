@@ -1,0 +1,35 @@
+[
+  {
+    "event_id": "click-000001",
+    "event_type": "CLICK",
+    "event_timestamp": "2026-09-12T22:00:00Z",
+    "ingestion_timestamp": "2026-09-12T22:00:02Z",
+    "customer_id": "customer-000001",
+    "session_id": "session-000001",
+    "product_id": "product-000001",
+    "page": "product-detail",
+    "action": "view"
+  },
+  {
+    "event_id": "click-000002",
+    "event_type": "CLICK",
+    "event_timestamp": "2026-09-12T22:00:05Z",
+    "ingestion_timestamp": "2026-09-12T22:00:07Z",
+    "customer_id": "customer-000001",
+    "session_id": "session-000001",
+    "product_id": "product-000002",
+    "page": "product-detail",
+    "action": "view"
+  },
+  {
+    "event_id": "click-000003",
+    "event_type": "CLICK",
+    "event_timestamp": "2026-09-12T22:00:12Z",
+    "ingestion_timestamp": "2026-09-12T22:00:14Z",
+    "customer_id": "customer-000002",
+    "session_id": "session-000002",
+    "product_id": "product-000001",
+    "page": "product-detail",
+    "action": "add_to_cart"
+  }
+]
