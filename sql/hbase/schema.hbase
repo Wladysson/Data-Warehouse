@@ -1,0 +1,13 @@
+create 'streaming_metrics',
+    {NAME => 'metrics', VERSIONS => 1},
+    {NAME => 'metadata', VERSIONS => 1}
+
+create 'streaming_alerts',
+    {NAME => 'alert', VERSIONS => 1},
+    {NAME => 'event', VERSIONS => 1},
+    {NAME => 'metadata', VERSIONS => 1}
+
+create 'event_realtime',
+    {NAME => 'event', VERSIONS => 1},
+    {NAME => 'entity', VERSIONS => 1},
+    {NAME => 'metadata', VERSIONS => 1}

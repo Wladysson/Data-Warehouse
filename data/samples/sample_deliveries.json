@@ -1,0 +1,13 @@
+{
+  "event_id": "delivery-000001",
+  "event_type": "DELIVERY",
+  "event_timestamp": "2026-09-13T10:00:00Z",
+  "ingestion_timestamp": "2026-09-13T10:00:05Z",
+  "customer_id": "customer-000001",
+  "order_id": "order-000001",
+  "delivery_id": "delivery-000001",
+  "status": "IN_TRANSIT",
+  "carrier": "transportadora-demo",
+  "estimated_delivery": "2026-09-15T18:00:00Z",
+  "actual_delivery": null
+}

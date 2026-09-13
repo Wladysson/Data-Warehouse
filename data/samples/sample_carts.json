@@ -1,0 +1,12 @@
+{
+  "event_id": "cart-000001",
+  "event_type": "CART",
+  "event_timestamp": "2026-09-12T22:01:00Z",
+  "ingestion_timestamp": "2026-09-12T22:01:02Z",
+  "customer_id": "customer-000001",
+  "session_id": "session-000001",
+  "cart_id": "cart-000001",
+  "product_id": "product-000001",
+  "quantity": 2,
+  "action": "ADD"
+}
