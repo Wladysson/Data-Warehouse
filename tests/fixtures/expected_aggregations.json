@@ -1,0 +1,43 @@
+{
+  "clicks": {
+    "total_events": 3,
+    "unique_customers": 2,
+    "unique_products": 2,
+    "events_by_customer": {
+      "customer-000001": 2,
+      "customer-000002": 1
+    },
+    "events_by_product": {
+      "product-000001": 2,
+      "product-000002": 1
+    }
+  },
+  "carts": {
+    "total_events": 3,
+    "unique_customers": 2,
+    "unique_carts": 2,
+    "total_items_added": 4,
+    "items_by_product": {
+      "product-000001": 3,
+      "product-000002": 1
+    }
+  },
+  "sales": {
+    "total_orders": 2,
+    "total_items": 3,
+    "gross_revenue": 389.70,
+    "average_order_value": 194.85,
+    "unique_customers": 2,
+    "revenue_by_customer": {
+      "customer-000001": 299.80,
+      "customer-000002": 89.90
+    }
+  },
+  "deliveries": {
+    "total_deliveries": 2,
+    "delivered": 1,
+    "in_transit": 1,
+    "on_time": 1,
+    "delayed": 0
+  }
+}
