@@ -1,10 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <!-- Hive Metastore -->
+    <!-- HiveServer2 -->
+    <property>
+        <name>hive.server2.thrift.bind.host</name>
+        <value>0.0.0.0</value>
+    </property>
+
+    <property>
+        <name>hive.server2.thrift.port</name>
+        <value>10000</value>
+    </property>
+
+    <property>
+        <name>hive.server2.thrift.http.port</name>
+        <value>10002</value>
+    </property>
+
+    <property>
+        <name>hive.server2.transport.mode</name>
+        <value>binary</value>
+    </property>
+
+    <!-- Metastore embutido -->
     <property>
         <name>hive.metastore.uris</name>
-        <value>thrift://hive-metastore:9083</value>
+        <value></value>
     </property>
 
     <property>

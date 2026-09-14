@@ -74,4 +74,8 @@
         <value>simple</value>
     </property>
 
+    <property>
+        <name>hbase.regionserver.wal.replication</name>
+        <value>1</value>
+    </property>
 </configuration>

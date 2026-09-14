@@ -9,12 +9,14 @@ RUN apt-get update \
         procps \
         python3 \
         python3-pip \
+    && ln -sf /usr/bin/python3 /usr/bin/python \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --no-cache-dir \
     apache-flink==1.20.3
 
 COPY configs/flink/flink-conf.yaml /opt/flink/conf/flink-conf.yaml
+
 COPY configs/flink/log4j2.xml /opt/flink/conf/log4j2.xml
 
 COPY src /app/src

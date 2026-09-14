@@ -43,6 +43,19 @@ services:
     networks:
       - ecommerce-bigdata
 
+  zookeeper:
+    image: zookeeper:3.8
+    container_name: ecommerce-zookeeper
+    hostname: zookeeper
+    restart: unless-stopped
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_4LW_COMMANDS_WHITELIST: ruok,stat,conf
+    ports:
+      - "2181:2181"
+    networks:
+      - ecommerce-bigdata
+
   hbase:
     build:
       context: ..
@@ -56,6 +69,7 @@ services:
     depends_on:
       - namenode
       - datanode
+      - zookeeper
     ports:
       - "16010:16010"
       - "16000:16000"

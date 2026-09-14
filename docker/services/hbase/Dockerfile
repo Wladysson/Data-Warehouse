@@ -24,8 +24,9 @@ COPY configs/hbase/hbase-site.xml ${HBASE_CONF_DIR}/hbase-site.xml
 COPY configs/hbase/hbase-env.sh ${HBASE_CONF_DIR}/hbase-env.sh
 
 RUN chmod +x ${HBASE_CONF_DIR}/hbase-env.sh \
-    && mkdir -p /opt/hbase/data
+    && mkdir -p /opt/hbase/data \
+    && mkdir -p /opt/hbase/logs
 
 EXPOSE 16000 16010 16020 9090
 
-CMD ["hbase", "master", "start"]
+CMD ["bash", "-c", "hbase master start & hbase regionserver start & wait"]
