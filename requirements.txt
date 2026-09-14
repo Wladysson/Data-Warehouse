@@ -1,0 +1,15 @@
+pydantic>=2.10,<3.0
+python-dotenv>=1.0,<2.0
+PyYAML>=6.0,<7.0
+pandas>=2.2,<3.0
+numpy>=2.0,<3.0
+
+pyspark==3.5.6
+apache-flink==1.20.3
+
+happybase>=1.2,<2.0
+thrift>=0.20,<1.0
+
+pytest>=8.0,<9.0
+pytest-cov>=5.0,<6.0
+ruff>=0.8,<1.0

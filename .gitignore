@@ -1,0 +1,81 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Test and coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Linters
+.ruff_cache/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Generated data
+data/raw/*
+data/processed/*
+data/curated/*
+
+# Keep sample and fixture data
+!data/samples/
+!data/samples/*.json
+!tests/fixtures/
+!tests/fixtures/*.json
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Spark
+spark-warehouse/
+metastore_db/
+
+# Hadoop / Hive / HBase local files
+*.pid
+*.pid.lock
+*.lck
+derby.log/
+
+# Docker
+docker/.env
+
+# Build artifacts
+build/
+dist/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
