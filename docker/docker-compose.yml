@@ -1,0 +1,194 @@
+services:
+
+  namenode:
+    build:
+      context: ..
+      dockerfile: docker/services/namenode/Dockerfile
+    container_name: ecommerce-namenode
+    hostname: namenode
+    restart: unless-stopped
+    environment:
+      HADOOP_VERSION: ${HADOOP_VERSION}
+      HDFS_NAMENODE_PORT: ${HDFS_NAMENODE_PORT}
+      HDFS_REPLICATION_FACTOR: ${HDFS_REPLICATION_FACTOR}
+    ports:
+      - "9870:9870"
+      - "8020:8020"
+    volumes:
+      - namenode_data:/hadoop/dfs/name
+      - ../configs/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ../configs/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+    networks:
+      - ecommerce-bigdata
+
+  datanode:
+    build:
+      context: ..
+      dockerfile: docker/services/datanode/Dockerfile
+    container_name: ecommerce-datanode
+    hostname: datanode
+    restart: unless-stopped
+    environment:
+      HADOOP_VERSION: ${HADOOP_VERSION}
+      HDFS_NAMENODE_HOST: ${HDFS_NAMENODE_HOST}
+      HDFS_NAMENODE_PORT: ${HDFS_NAMENODE_PORT}
+    depends_on:
+      - namenode
+    ports:
+      - "9864:9864"
+    volumes:
+      - datanode_data:/hadoop/dfs/data
+      - ../configs/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ../configs/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+    networks:
+      - ecommerce-bigdata
+
+  hbase:
+    build:
+      context: ..
+      dockerfile: docker/services/hbase/Dockerfile
+    container_name: ecommerce-hbase
+    hostname: hbase
+    restart: unless-stopped
+    environment:
+      HBASE_VERSION: ${HBASE_VERSION}
+      HBASE_ROOT_DIR: ${HBASE_ROOT_DIR}
+    depends_on:
+      - namenode
+      - datanode
+    ports:
+      - "16010:16010"
+      - "16000:16000"
+      - "16020:16020"
+      - "9090:9090"
+    volumes:
+      - hbase_data:/opt/hbase/data
+      - ../configs/hbase/hbase-site.xml:/opt/hbase/conf/hbase-site.xml:ro
+      - ../configs/hbase/hbase-env.sh:/opt/hbase/conf/hbase-env.sh:ro
+    networks:
+      - ecommerce-bigdata
+
+  hive:
+    build:
+      context: ..
+      dockerfile: docker/services/hive/Dockerfile
+    container_name: ecommerce-hive
+    hostname: hive
+    restart: unless-stopped
+    environment:
+      HIVE_VERSION: ${HIVE_VERSION}
+      HIVE_METASTORE_DB: ${HIVE_METASTORE_DB}
+      HIVE_METASTORE_USER: ${HIVE_METASTORE_USER}
+      HIVE_METASTORE_PASSWORD: ${HIVE_METASTORE_PASSWORD}
+    depends_on:
+      - namenode
+      - datanode
+    ports:
+      - "10000:10000"
+      - "10002:10002"
+    volumes:
+      - hive_data:/opt/hive/data
+      - ../configs/hive/hive-site.xml:/opt/hive/conf/hive-site.xml:ro
+      - ../configs/hive/hive-env.sh:/opt/hive/conf/hive-env.sh:ro
+    networks:
+      - ecommerce-bigdata
+
+  flink:
+    build:
+      context: ..
+      dockerfile: docker/services/flink/Dockerfile
+    container_name: ecommerce-flink
+    hostname: flink
+    restart: unless-stopped
+    environment:
+      FLINK_VERSION: ${FLINK_VERSION}
+      HDFS_NAMENODE_HOST: ${HDFS_NAMENODE_HOST}
+      HDFS_NAMENODE_PORT: ${HDFS_NAMENODE_PORT}
+    depends_on:
+      - namenode
+      - datanode
+      - hbase
+    ports:
+      - "8081:8081"
+    volumes:
+      - ../configs/flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml:ro
+      - ../configs/flink/log4j2.xml:/opt/flink/conf/log4j2.xml:ro
+      - ../src:/app/src:ro
+      - ../data:/app/data
+    networks:
+      - ecommerce-bigdata
+
+  spark:
+    build:
+      context: ..
+      dockerfile: docker/services/spark/Dockerfile
+    container_name: ecommerce-spark
+    hostname: spark
+    restart: unless-stopped
+    environment:
+      SPARK_VERSION: ${SPARK_VERSION}
+      HDFS_NAMENODE_HOST: ${HDFS_NAMENODE_HOST}
+      HDFS_NAMENODE_PORT: ${HDFS_NAMENODE_PORT}
+    depends_on:
+      - namenode
+      - datanode
+      - hive
+    ports:
+      - "4040:4040"
+      - "7077:7077"
+      - "8080:8080"
+    volumes:
+      - ../configs/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
+      - ../configs/spark/hive-site.xml:/opt/spark/conf/hive-site.xml:ro
+      - ../configs/spark/log4j.properties:/opt/spark/conf/log4j.properties:ro
+      - ../src:/app/src:ro
+      - ../data:/app/data
+    networks:
+      - ecommerce-bigdata
+
+  generator:
+    build:
+      context: ..
+      dockerfile: docker/services/generator/Dockerfile
+    container_name: ecommerce-generator
+    hostname: generator
+    restart: unless-stopped
+    environment:
+      PIPELINE_ENV: ${PIPELINE_ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
+    volumes:
+      - ../src:/app/src:ro
+      - ../data:/app/data
+    networks:
+      - ecommerce-bigdata
+
+  flume:
+    build:
+      context: ..
+      dockerfile: docker/services/flume/Dockerfile
+    container_name: ecommerce-flume
+    hostname: flume
+    restart: unless-stopped
+    environment:
+      HDFS_NAMENODE_HOST: ${HDFS_NAMENODE_HOST}
+      HDFS_NAMENODE_PORT: ${HDFS_NAMENODE_PORT}
+    depends_on:
+      - namenode
+      - datanode
+      - generator
+    volumes:
+      - ../configs/flume/flume-conf.properties:/opt/flume/conf/flume-conf.properties:ro
+      - ../configs/flume/flume-env.sh:/opt/flume/conf/flume-env.sh:ro
+      - ../data:/app/data
+    networks:
+      - ecommerce-bigdata
+
+networks:
+  ecommerce-bigdata:
+    driver: bridge
+
+volumes:
+  namenode_data:
+  datanode_data:
+  hbase_data:
+  hive_data:
