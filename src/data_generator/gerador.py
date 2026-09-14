@@ -5,15 +5,15 @@ import logging
 import signal
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, List, Optional
 
-from .schemas import (
-    CartEventSchema,
-    ClickEventSchema,
-    DeliveryEventSchema,
-    EventSchema,
-    OrderEventSchema,
+from .generators import (
+    generate_cart_event,
+    generate_click_event,
+    generate_delivery_event,
+    generate_order_event,
 )
+from .schemas import EventSchema
 
 
 logger = logging.getLogger(__name__)
@@ -282,18 +282,22 @@ def create_default_generator(
     events_per_batch: int = 10,
 ) -> EventGeneratorService:
     """
-    Cria o serviço principal do gerador.
-
-    Os geradores especializados serão registrados posteriormente
-    conforme os módulos de click, cart, order e delivery forem
-    implementados.
+    Cria o serviço principal do gerador e registra os geradores
+    especializados de click, cart, order e delivery.
     """
 
-    return EventGeneratorService(
+    generator = EventGeneratorService(
         output_path=output_path,
         interval_seconds=interval_seconds,
         events_per_batch=events_per_batch,
     )
+
+    generator.register_generator(generate_click_event)
+    generator.register_generator(generate_cart_event)
+    generator.register_generator(generate_order_event)
+    generator.register_generator(generate_delivery_event)
+
+    return generator
 
 
 def main() -> None:
@@ -312,19 +316,11 @@ def main() -> None:
     generator = create_default_generator()
 
     logger.info(
-        "Gerador inicializado. "
-        "Aguardando registro dos geradores especializados."
+        "Gerador inicializado com %d geradores especializados.",
+        len(generator.event_generators),
     )
 
     generator.register_signal_handlers()
-
-    if not generator.event_generators:
-        logger.error(
-            "Nenhum gerador especializado foi registrado. "
-            "A execução será encerrada."
-        )
-        return
-
     generator.start()
 
 

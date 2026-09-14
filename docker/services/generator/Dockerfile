@@ -11,10 +11,10 @@ RUN apt-get update \
         bash \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt /app/requirements.txt
-
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r /app/requirements.txt
+RUN pip install --no-cache-dir \
+    "pydantic>=2.10,<3.0" \
+    "python-dotenv>=1.0,<2.0" \
+    "PyYAML>=6.0,<7.0"
 
 COPY src /app/src
 
