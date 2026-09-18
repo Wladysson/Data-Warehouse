@@ -38,12 +38,14 @@
 
 ## 📖 Visão Geral
 
-A pipeline percore todas as etapas do ciclo de vida do dado, da geração ao armazenamento analítico. Cada camada abaixo corresponde a uma frente técnica do trabalho.
+O Laboratorio tem como objetivo principal a construção de um pipeline varejista que percore todas as etapas do ciclo de vida do dado, da geração ao armazenamento analítico. Cada camada abaixo corresponde a uma frente técnica do trabalho.
 
-Esse laboratorio utiliza diferentes tecnologias e ferramentas nao só pelas funcionalidades, mas sim porque cada componente possui uma
+Esse projeto em questão utiliza diferentes tecnologias e ferramentas nao só pelas funcionalidades, mas sim porque cada componente possui uma
 responsabilidade específica no ciclo de vida do dado.
 
-Outra observação importante é que nenhuma das tecnologias anda competindo, pois cada uma atende padrões de processamento diferentes, como por exemplo: Flink trata o fluxo contínuo de eventos em tempo real, enquanto Spark processa o histórico em batch para consolidação analítica no Hive.
+Outra observação importante é que nenhuma das tecnologias anda competindo, pois cada uma atende padrões de processamento diferentes, como por exemplo o nosso Flink que trata o fluxo contínuo de eventos em tempo real, enquanto Spark processa o histórico em batch para consolidação analítica no Hive.
+
+<img src="./docs/imagens/principal.png">
 
 
 ## 🏗️ Principios de Arquitetura
@@ -75,10 +77,10 @@ Outra observação importante é que nenhuma das tecnologias anda competindo, po
 
 # 🧭 Arquitetura, Fluxos e Diagramas
 
-Esta seção apresenta os principais fluxos, componentes e decisões arquiteturais implementados na plataforma até o momento.
-As imagens abaixo representam diferentes estágios de desenvolvimento e teste e destinam-se a fornecer evidência visual da plataforma operando com sucesso.
+Esta seção apresenta os principais fluxos, componentes, testes e decisões arquiteturais implementados no pipeline.
+As imagens abaixo representam diferentes estágios de desenvolvimento e teste e destinam-se a fornecer evidência visual operando com sucesso.
 
-Os diagramas têm como objetivo facilitar a compreensão das interações entre serviços, infraestrutura e componentes da plataforma, servindo também como referência durante o desenvolvimento e evolução da arquitetura.
+Os diagramas têm como objetivo facilitar a compreensão das interações entre as funcionalidades, infraestrutura e componentes do mesmo, servindo também como referência durante o desenvolvimento e evolução da arquitetura.
 
 > Os screenshots são intencionalmente apresentados como evidência de implementação em vez de estarem atrelados a uma categoria específica de documentação. No entanto, 
 cada camada tem suas imagens e explicaçao em suas devidas configurações.
@@ -87,4 +89,33 @@ cada camada tem suas imagens e explicaçao em suas devidas configurações.
 
 ---
 
-continuamos apartir daqui: 
+# Padrões de Arquitetura do Pipeline
+
+## Fluxo de Dados
+
+# Ingestão de Dados
+
+### Coleta com Apache Flume
+
+### Transporte e Entrega
+
+# Processamento de Dados
+
+### Batch
+
+### Watermarks e Eventos Fora de Ordem
+
+### Janelas Temporais
+
+### Transformações e Joins
+
+# Modelagem e Camadas de Dados
+
+# Orquestração e Containers
+
+# Monitoramento
+
+# Testes
+
+# Implementações Futuras
+
