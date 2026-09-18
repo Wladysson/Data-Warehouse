@@ -124,6 +124,7 @@ services:
       - hbase
     ports:
       - "8081:8081"
+      - "9999:9999"
     volumes:
       - ../configs/flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml:ro
       - ../configs/flink/log4j2.xml:/opt/flink/conf/log4j2.xml:ro

@@ -39,13 +39,18 @@ RUN sed -i 's/^JAVA_OPTS="-Xmx20m"/JAVA_OPTS="-Xms256m -Xmx512m"/' \
 
 RUN mkdir -p \
     /opt/flume/conf \
+    /opt/flume/checkpoint \
+    /opt/flume/data \
     /app/data/raw
 
-COPY configs/flume/flume-conf.properties /opt/flume/conf/flume-conf.properties
-COPY configs/flume/flume-env.sh /opt/flume/conf/flume-env.sh
+COPY configs/flume/flume-conf.properties \
+    /opt/flume/conf/flume-conf.properties
+
+COPY configs/flume/flume-env.sh \
+    /opt/flume/conf/flume-env.sh
+
+RUN chmod +x /opt/flume/conf/flume-env.sh
 
 WORKDIR /app
 
-EXPOSE 41414
-
-CMD ["flume-ng", "agent", "--conf", "/opt/flume/conf", "--conf-file", "/opt/flume/conf/flume-conf.properties", "--name", "agent", "-Dflume.root.logger=INFO,console"]
+CMD ["/opt/flume/bin/flume-ng", "agent", "-n", "agent", "-c", "/opt/flume/conf", "-f", "/opt/flume/conf/flume-conf.properties", "-Dflume.root.logger=INFO,console"]

@@ -9,6 +9,7 @@ RUN apt-get update \
         procps \
         python3 \
         python3-pip \
+        netcat-openbsd \
     && ln -sf /usr/bin/python3 /usr/bin/python \
     && rm -rf /var/lib/apt/lists/*
 
@@ -34,4 +35,4 @@ USER flink
 
 EXPOSE 8081 6123 6124
 
-CMD ["bash", "-c", "start-cluster.sh && tail -f /dev/null"]
+CMD ["bash", "-c", "start-cluster.sh && (while true; do nc -lk -p 9999 >> /app/data/raw/flink-events.jsonl; done)"]

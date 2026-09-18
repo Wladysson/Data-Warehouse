@@ -5,6 +5,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, Optional
+from pyflink.datastream import DataStream
 
 from pyflink.common import Duration, Types
 from pyflink.common.watermark_strategy import (
@@ -13,10 +14,9 @@ from pyflink.common.watermark_strategy import (
 from pyflink.common.watermark_strategy import (
     WatermarkStrategy as FlinkWatermarkStrategy,
 )
-from pyflink.datastream import StreamExecutionEnvironment
-from pyflink.datastream.connectors.file_system import (
-    FileSource,
-    StreamFormat,
+from pyflink.datastream import (
+    DataStream,
+    StreamExecutionEnvironment,
 )
 from pyflink.datastream.functions import ProcessWindowFunction
 from pyflink.datastream.window import (
@@ -41,16 +41,13 @@ class FlinkJobConfig:
 
     checkpoint_interval_ms: int = 60_000
 
-    input_path: str = (
-        "data/raw/events.jsonl"
-    )
+    flink_socket_host: str = "0.0.0.0"
+    flink_socket_port: int = 9999
 
     hbase_namespace: str = "ecommerce"
     hbase_alert_table: str = "realtime_alerts"
 
-    hdfs_output_path: str = (
-        "/data/raw/streaming"
-    )
+    hdfs_output_path: str = "/data/raw/streaming"
 
     def validate(self) -> None:
 
@@ -95,6 +92,16 @@ class FlinkJobConfig:
             raise ValueError(
                 "checkpoint_interval_ms "
                 "deve ser maior que zero."
+            )
+
+        if not self.flink_socket_host.strip():
+            raise ValueError(
+                "flink_socket_host não pode ser vazio."
+            )
+
+        if not 1 <= self.flink_socket_port <= 65535:
+            raise ValueError(
+                "flink_socket_port deve estar entre 1 e 65535."
             )
 
 
@@ -251,18 +258,34 @@ class FlinkStreamingJob:
 
     def _create_source(
         self,
-    ):
+        env: StreamExecutionEnvironment,
+    ) -> DataStream:
+
+        from pyflink.common import WatermarkStrategy
+        from pyflink.datastream.connectors.file_system import (
+            FileSource,
+            StreamFormat,
+        )
 
         source = (
             FileSource
             .for_record_stream_format(
                 StreamFormat.text_line_format(),
-                self.config.input_path,
+                "/app/data/raw/flink-events.jsonl",
+            )
+            .monitor_continuously(
+                Duration.of_seconds(1)
             )
             .build()
         )
 
-        return source
+        return (
+            env.from_source(
+                source,
+                WatermarkStrategy.no_watermarks(),
+                "flume-flink-file-source",
+            )
+        )
 
     def build_pipeline(self) -> Any:
 
@@ -270,16 +293,7 @@ class FlinkStreamingJob:
 
         env = self._create_environment()
 
-        source = self._create_source()
-
-        raw_events = (
-            env.from_source(
-                source,
-                FlinkWatermarkStrategy
-                .no_watermarks(),
-                "event-file-source",
-            )
-        )
+        raw_events = self._create_source(env)
 
         parsed_events = (
             raw_events
@@ -482,4 +496,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
