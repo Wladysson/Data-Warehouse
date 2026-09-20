@@ -271,7 +271,7 @@ class FlinkStreamingJob:
             FileSource
             .for_record_stream_format(
                 StreamFormat.text_line_format(),
-                "/app/data/raw/flink-events.jsonl",
+                "hdfs://namenode:9000/data/raw/events",
             )
             .monitor_continuously(
                 Duration.of_seconds(1)

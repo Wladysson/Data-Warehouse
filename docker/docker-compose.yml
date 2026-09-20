@@ -108,6 +108,7 @@ services:
       - ecommerce-bigdata
 
   flink:
+
     build:
       context: ..
       dockerfile: docker/services/flink/Dockerfile
@@ -118,6 +119,7 @@ services:
       FLINK_VERSION: ${FLINK_VERSION}
       HDFS_NAMENODE_HOST: ${HDFS_NAMENODE_HOST}
       HDFS_NAMENODE_PORT: ${HDFS_NAMENODE_PORT}
+      HADOOP_CONF_DIR: /opt/hadoop/etc/hadoop
     depends_on:
       - namenode
       - datanode
@@ -128,9 +130,13 @@ services:
     volumes:
       - ../configs/flink/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml:ro
       - ../configs/flink/log4j2.xml:/opt/flink/conf/log4j2.xml:ro
+      - ../configs/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ../configs/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
       - ../src:/app/src:ro
       - ../data:/app/data
+
     networks:
+
       - ecommerce-bigdata
 
   spark:
