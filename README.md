@@ -53,7 +53,7 @@ Outra observação importante é que nenhuma das tecnologias anda competindo, po
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
 | Geração de Dados                      | Geração contínua e controlada de eventos representando o comportamento de usuários, vendas e operações logísticas. | data_generator utiliza Python 3 para produzir eventos JSON de cliques, carrinhos, pedidos e entregas, controlando volume, velocidade e timestamps.                  |
 | Ingestão                          | Recepção, desacoplamento e distribuição contínua dos eventos para as camadas de processamento e armazenamento.                                         | Apache Flume coleta os eventos gerados e realiza a ingestão no ecossistema Hadoop, direcionando os dados para processamento e persistência.           |
-|  Streaming                     | Processamento de eventos em tempo real considerando o tempo do evento e a chegada de dados fora de ordem.                                 | Apache Flink utiliza Event Time, Watermarks e Sliding Windows para processar eventos continuamente, identificar padrões e gerar alertas em tempo real.                       |
+|  Streaming                     | Processamento de eventos em tempo real considerando o tempo do evento e a chegada de dados fora de ordem.                                 | Apache Flink utiliza Event Time, Watermarks e Sliding Windows para processar eventos continuamente, identificar padrões.                       |
 |    Batch                | Processamento histórico dos dados para limpeza, transformação, junção e geração de informações analíticas consolidadas.                                           | Apache Spark executa jobs de ETL utilizando RDDs, Spark SQL, agregações e joins, processando os dados históricos armazenados no HDFS.                                                |
 |     Armazenamento                          | Separação das necessidades de armazenamento bruto, acesso de baixa latência e análise histórica.                                          | HDFS armazena os dados brutos em grande escala, HBase mantém alertas e resultados para consultas rápidas, e Hive organiza os dados consolidados como Data Warehouse.          |
 
@@ -101,11 +101,45 @@ cada camada tem suas imagens e explicaçao em suas devidas configurações.
 
 # Processamento de Dados
 
-### Batch
+### Métricas do Pipeline
+O processamento dos eventos é realizado de forma distribuída utilizando
+Apache Flink, responsável pelo tratamento contínuo dos eventos recebidos
+pela camada de ingestão.
+
+Os eventos são produzidos pelo gerador Python em formato JSON e disponibilizados para o processo de ingestão. O Apache Flume acompanha o arquivo de eventos e encaminha os registros para o armazenamento em HDFS. O job Flink utiliza esses dados como fonte de streaming para iniciar o processamento.
+
+<img src="./docs/imagens/fontes/consumo_principal1.png"><br>
+
+A execução pode ser acompanhada por meio da interface do Flink, que
+permite observar o volume processado e o estado dos operadores que durante a execução do ecommerce-streaming-job, o painel do Apache Flink registrou 12.400 registros recebidos pela fonte de processamento. Essa métrica representa eventos que efetivamente chegaram ao job durante a execução observada, permitindo demonstrar o funcionamento do fluxo de ingestão e processamento contínuo.
+
+---
 
 ### Watermarks e Eventos Fora de Ordem
 
+Neste pipeline utilizamos Event Time para determinar a posição temporal dos eventos a partir do campo event_timestamp, em vez de utilizar exclusivamente o instante em que o registro é recebido pelo Flink. Após o parsing e a validação dos eventos, o timestamp de cada registro é extraído e utilizado na atribuição dos timestamps e na geração dos watermarks.
+
+<img src="./docs/imagens/fontes/jobs_completos2.png"><br>
+
+O job utiliza uma estratégia de bounded out-of-orderness, configurada com uma tolerância de 10 segundos para eventos que chegam fora de ordem. O watermark representa uma estimativa do progresso do tempo de evento e permite que o Flink avance o processamento temporal mantendo uma margem para a chegada tardia de registros.
+
+---
+
 ### Janelas Temporais
+
+A aplicação utiliza Sliding Windows baseadas em Event Time para realizar agregações contínuas sobre intervalos temporais sobrepostos. Cada janela possui 60 segundos de duração e é deslocada a cada 10 segundos, produzindo uma nova avaliação do fluxo em intervalos regulares.
+
+<img src="./docs/imagens/fontes/janela.png"><br>
+
+Cada nova janela avança 10 segundos, enquanto mantém uma duração total de 60 segundos. Como consequência, existe uma sobreposição de 50 segundos entre duas janelas consecutivas.
+
+<img src="./docs/imagens/fontes/detalhamento_job3.png">
+
+Todos os eventos são posicionados nas janelas utilizando o Event Time associado ao event_timestamp. Dessa forma, a participação de um evento em uma janela é determinada pelo seu instante de ocorrência, e não simplesmente pelo momento em que o registro chegou ao operador.
+
+---
+
+### Batch
 
 ### Transformações e Joins
 
