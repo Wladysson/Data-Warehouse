@@ -43,11 +43,24 @@ O Laboratorio tem como objetivo principal a construção de um pipeline varejist
 Esse projeto em questão utiliza diferentes tecnologias e ferramentas nao só pelas funcionalidades, mas sim porque cada componente possui uma
 responsabilidade específica no ciclo de vida do dado.
 
-Outra observação importante é que nenhuma das tecnologias anda competindo, pois cada uma atende padrões de processamento diferentes, como por exemplo o nosso Flink que trata o fluxo contínuo de eventos em tempo real, enquanto Spark processa o histórico em batch para consolidação analítica no Hive.
+Outra observação importante é que nenhuma das tecnologias anda competindo, pois cada uma atende padrões de processamento diferentes, onde podemos analisar na imagem abaixo, o pipeline combina processamento de streaming e batch a partir dos eventos
+gerados continuamente pelo Python. O [Apache Flume](https://flume.apache.org/)
+realiza a ingestão e persiste os eventos brutos no
+[HDFS](https://hadoop.apache.org/), que funciona como base para os dois fluxos
+de processamento. No caminho de streaming, o
+[Apache Flink](https://flink.apache.org/) processa os eventos utilizando
+Event Time, watermarks e janelas deslizantes, armazenando os resultados em
+tempo real no [HBase](https://hbase.apache.org/). No caminho batch, o
+[Apache Spark](https://spark.apache.org/) processa o histórico armazenado no
+HDFS por meio de RDDs e Spark SQL, realizando transformações, joins e
+agregações antes da consolidação dos dados no
+[Hive](https://hive.apache.org/) como Data Warehouse.
 
 <p align="center">
   <img src="./docs/imagens/diagramaprincipal.png">
 </p>
+
+---
 
 
 ## 🏗️ Principios de Arquitetura
