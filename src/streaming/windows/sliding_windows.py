@@ -4,6 +4,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Dict, Iterable, Iterator, List, Optional
+import logging
 
 from src.streaming.models import (
     StreamingEvent,
@@ -15,6 +16,9 @@ from .window_utils import (
     generate_window_starts,
     validate_window_configuration,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,6 +73,7 @@ class SlidingWindowProcessor:
         slide_seconds: int = 10,
         allowed_lateness_seconds: int = 10,
     ) -> None:
+
         validate_window_configuration(
             size_seconds,
             slide_seconds,
@@ -102,6 +107,7 @@ class SlidingWindowProcessor:
         self,
         window_start: datetime,
     ) -> SlidingWindow:
+
         return SlidingWindow(
             start=window_start,
             end=calculate_window_end(
@@ -142,6 +148,7 @@ class SlidingWindowProcessor:
         ] = defaultdict(list)
 
         for event in events:
+
             if not isinstance(event, StreamingEvent):
                 raise TypeError(
                     "Todos os elementos devem ser StreamingEvent."
@@ -174,6 +181,7 @@ class SlidingWindowProcessor:
         )
 
         for event in events:
+
             if not isinstance(event, StreamingEvent):
                 raise TypeError(
                     "Todos os elementos devem ser StreamingEvent."
@@ -202,7 +210,6 @@ class SlidingWindowProcessor:
             key: dict(window_map)
             for key, window_map in result.items()
         }
-
     def aggregate_window(
         self,
         window: SlidingWindow,
@@ -218,6 +225,7 @@ class SlidingWindowProcessor:
             )
 
         for event in event_list:
+
             if not isinstance(event, StreamingEvent):
                 raise TypeError(
                     "Todos os elementos devem ser StreamingEvent."
@@ -264,6 +272,20 @@ class SlidingWindowProcessor:
             Decimal("0.00"),
         )
 
+        total_amount = total_amount.quantize(
+            Decimal("0.01")
+        )
+
+        logger.info(
+            "SLIDING WINDOW PROCESSADA | "
+            "inicio=%s | fim=%s | eventos=%s | clientes=%s | valor_total=%s",
+            window.start.isoformat(),
+            window.end.isoformat(),
+            len(event_list),
+            unique_customers,
+            total_amount,
+        )
+
         return WindowAggregation(
             window_start=window.start,
             window_end=window.end,
@@ -271,9 +293,7 @@ class SlidingWindowProcessor:
             event_count=len(event_list),
             unique_customers=unique_customers,
             total_quantity=total_quantity,
-            total_amount=total_amount.quantize(
-                Decimal("0.01")
-            ),
+            total_amount=total_amount,
             key=key,
             metadata={
                 "window_type": "sliding",
@@ -303,6 +323,7 @@ class SlidingWindowProcessor:
             assigned_windows.items(),
             key=lambda item: item[0].start,
         ):
+
             aggregations.append(
                 self.aggregate_window(
                     window,
@@ -328,10 +349,12 @@ class SlidingWindowProcessor:
         ] = []
 
         for key, windows in keyed_windows.items():
+
             for window, window_events in sorted(
                 windows.items(),
                 key=lambda item: item[0].start,
             ):
+
                 aggregations.append(
                     self.aggregate_window(
                         window,
@@ -365,7 +388,10 @@ class SlidingWindowProcessor:
             )
         )
 
-        return event.event_timestamp < allowed_boundary
+        return (
+            event.event_timestamp
+            < allowed_boundary
+        )
 
     def iter_windows(
         self,

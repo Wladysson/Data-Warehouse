@@ -49,3 +49,6 @@ metrics.reporter.slf4j.interval: 60 SECONDS
 env.java.home: /usr/lib/jvm/java-11-openjdk
 
 classloader.resolve-order: parent-first
+
+pipeline.event-time.enabled: true
+pipeline.watermarks.enabled: true

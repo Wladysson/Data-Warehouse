@@ -2,23 +2,30 @@ from __future__ import annotations
 
 import json
 import logging
+
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, Optional
-from pyflink.datastream import DataStream
 
 from pyflink.common import Duration, Types
+
 from pyflink.common.watermark_strategy import (
     TimestampAssigner as FlinkTimestampAssigner,
 )
+
 from pyflink.common.watermark_strategy import (
     WatermarkStrategy as FlinkWatermarkStrategy,
 )
+
 from pyflink.datastream import (
     DataStream,
     StreamExecutionEnvironment,
 )
-from pyflink.datastream.functions import ProcessWindowFunction
+
+from pyflink.datastream.functions import (
+    ProcessWindowFunction,
+)
+
 from pyflink.datastream.window import (
     SlidingEventTimeWindows,
     Time,
@@ -32,22 +39,27 @@ logger = logging.getLogger(__name__)
 class FlinkJobConfig:
 
     job_name: str = "ecommerce-streaming-job"
+
     parallelism: int = 1
 
     watermark_out_of_orderness_seconds: int = 10
 
     sliding_window_size_seconds: int = 60
+
     sliding_window_slide_seconds: int = 10
 
-    checkpoint_interval_ms: int = 60_000
+    checkpoint_interval_ms: int = 60000
 
     flink_socket_host: str = "0.0.0.0"
+
     flink_socket_port: int = 9999
 
     hbase_namespace: str = "ecommerce"
+
     hbase_alert_table: str = "realtime_alerts"
 
     hdfs_output_path: str = "/data/raw/streaming"
+
 
     def validate(self) -> None:
 
@@ -63,20 +75,17 @@ class FlinkJobConfig:
 
         if self.watermark_out_of_orderness_seconds < 0:
             raise ValueError(
-                "watermark_out_of_orderness_seconds "
-                "deve ser maior ou igual a zero."
+                "watermark_out_of_orderness_seconds inválido."
             )
 
         if self.sliding_window_size_seconds <= 0:
             raise ValueError(
-                "sliding_window_size_seconds "
-                "deve ser maior que zero."
+                "sliding_window_size_seconds inválido."
             )
 
         if self.sliding_window_slide_seconds <= 0:
             raise ValueError(
-                "sliding_window_slide_seconds "
-                "deve ser maior que zero."
+                "sliding_window_slide_seconds inválido."
             )
 
         if (
@@ -84,24 +93,24 @@ class FlinkJobConfig:
             > self.sliding_window_size_seconds
         ):
             raise ValueError(
-                "O slide da janela não pode ser maior "
-                "que o tamanho da janela."
+                "Slide maior que tamanho da janela."
             )
 
         if self.checkpoint_interval_ms <= 0:
             raise ValueError(
-                "checkpoint_interval_ms "
-                "deve ser maior que zero."
+                "checkpoint_interval_ms inválido."
             )
 
         if not self.flink_socket_host.strip():
             raise ValueError(
-                "flink_socket_host não pode ser vazio."
+                "flink_socket_host vazio."
             )
 
-        if not 1 <= self.flink_socket_port <= 65535:
+        if not (
+            1 <= self.flink_socket_port <= 65535
+        ):
             raise ValueError(
-                "flink_socket_port deve estar entre 1 e 65535."
+                "flink_socket_port inválido."
             )
 
 
@@ -122,21 +131,21 @@ class EventTimestampAssigner(
         if not timestamp:
             return record_timestamp
 
-        normalized_timestamp = (
-            str(timestamp).replace(
+        normalized = (
+            str(timestamp)
+            .replace(
                 "Z",
                 "+00:00",
             )
         )
 
-        event_datetime = (
-            datetime.fromisoformat(
-                normalized_timestamp
-            )
+        event_datetime = datetime.fromisoformat(
+            normalized
         )
 
         return int(
-            event_datetime.timestamp() * 1000
+            event_datetime.timestamp()
+            * 1000
         )
 
 
@@ -146,7 +155,7 @@ class WindowAggregationFunction(
 
     def process(
         self,
-        key: str,
+        key,
         context,
         elements,
     ):
@@ -156,62 +165,76 @@ class WindowAggregationFunction(
         if not events:
             return
 
-        event_count = len(events)
-
-        unique_customers = len(
-            {
-                event.get("customer_id")
-                for event in events
-                if event.get("customer_id")
-            }
-        )
-
-        total_quantity = sum(
-            int(
-                event.get("quantity") or 0
-            )
-            for event in events
-        )
-
-        total_amount = sum(
-            float(
-                event.get("total_amount") or 0
-            )
-            for event in events
-        )
-
-        event_types = sorted(
-            {
-                event.get("event_type")
-                for event in events
-                if event.get("event_type")
-            }
-        )
-
         result = {
-            "window_start": (
-                context.window().start
-            ),
-            "window_end": (
-                context.window().end
-            ),
-            "customer_id": key,
-            "event_count": event_count,
-            "unique_customers": unique_customers,
-            "total_quantity": total_quantity,
-            "total_amount": round(
-                total_amount,
-                2,
-            ),
-            "event_types": event_types,
+
+            "window_start":
+                context.window().start,
+
+            "window_end":
+                context.window().end,
+
+            "customer_id":
+                key,
+
+            "event_count":
+                len(events),
+
+            "unique_customers":
+                len(
+                    {
+                        event.get(
+                            "customer_id"
+                        )
+                        for event in events
+                        if event.get(
+                            "customer_id"
+                        )
+                    }
+                ),
+
+            "total_quantity":
+                sum(
+                    int(
+                        event.get(
+                            "quantity"
+                        )
+                        or 0
+                    )
+                    for event in events
+                ),
+
+            "total_amount":
+                round(
+                    sum(
+                        float(
+                            event.get(
+                                "total_amount"
+                            )
+                            or 0
+                        )
+                        for event in events
+                    ),
+                    2,
+                ),
+
+            "event_types":
+                sorted(
+                    {
+                        event.get(
+                            "event_type"
+                        )
+                        for event in events
+                        if event.get(
+                            "event_type"
+                        )
+                    }
+                ),
         }
 
         yield json.dumps(
             result,
             ensure_ascii=False,
         )
-
-
 class FlinkStreamingJob:
 
     def __init__(
@@ -227,15 +250,22 @@ class FlinkStreamingJob:
 
         self._running = False
 
-        self._pipeline: Optional[Any] = None
+        self._pipeline = None
+
+        self._pipeline_description = None
+
 
     @property
     def running(self) -> bool:
+
         return self._running
+
 
     @property
     def pipeline(self) -> Optional[Any]:
-        return self._pipeline
+
+        return self._pipeline_description
+
 
     def _create_environment(
         self,
@@ -256,12 +286,16 @@ class FlinkStreamingJob:
 
         return env
 
+
     def _create_source(
         self,
         env: StreamExecutionEnvironment,
     ) -> DataStream:
 
-        from pyflink.common import WatermarkStrategy
+        from pyflink.common import (
+            WatermarkStrategy
+        )
+
         from pyflink.datastream.connectors.file_system import (
             FileSource,
             StreamFormat,
@@ -287,13 +321,16 @@ class FlinkStreamingJob:
             )
         )
 
+
     def build_pipeline(self) -> Any:
 
         self.config.validate()
 
         env = self._create_environment()
 
-        raw_events = self._create_source(env)
+        raw_events = self._create_source(
+            env
+        )
 
         parsed_events = (
             raw_events
@@ -311,7 +348,8 @@ class FlinkStreamingJob:
         valid_events = (
             parsed_events
             .filter(
-                lambda event: (
+                lambda event:
+                (
                     bool(
                         event.get(
                             "event_id"
@@ -339,6 +377,7 @@ class FlinkStreamingJob:
             )
         )
 
+
         watermark_strategy = (
             FlinkWatermarkStrategy
             .for_bounded_out_of_orderness(
@@ -352,6 +391,7 @@ class FlinkStreamingJob:
             )
         )
 
+
         timestamped_events = (
             valid_events
             .assign_timestamps_and_watermarks(
@@ -362,15 +402,18 @@ class FlinkStreamingJob:
             )
         )
 
+
         keyed_events = (
             timestamped_events
             .key_by(
-                lambda event: event.get(
+                lambda event:
+                event.get(
                     "customer_id",
                     "unknown",
                 )
             )
         )
+
 
         windowed_events = (
             keyed_events
@@ -388,6 +431,7 @@ class FlinkStreamingJob:
             )
         )
 
+
         aggregated_events = (
             windowed_events
             .process(
@@ -399,32 +443,120 @@ class FlinkStreamingJob:
             )
         )
 
+
         aggregated_events.print(
             "STREAMING-WINDOW"
         ).name(
             "streaming-window-console-sink"
         )
 
+
         self._pipeline = env
+
+
+        pipeline_info = {
+
+            "environment": env,
+
+            "source": {
+                "type": "filesystem",
+                "path": (
+                    "hdfs://namenode:9000/data/raw/events"
+                ),
+            },
+
+            "watermark": {
+                "enabled": True,
+                "type": (
+                    "bounded_out_of_orderness"
+                ),
+                "seconds": (
+                    self.config
+                    .watermark_out_of_orderness_seconds
+                ),
+                "max_out_of_orderness_seconds": (
+                     self.config
+                     .watermark_out_of_orderness_seconds
+                ),
+
+                "event_time": True,
+                },
+
+            "window": {
+                "type": "sliding",
+                "size_seconds": (
+                    self.config
+                    .sliding_window_size_seconds
+                ),
+                "slide_seconds": (
+                    self.config
+                    .sliding_window_slide_seconds
+                ),
+            },
+
+            "aggregation": {
+                "function": (
+                    "WindowAggregationFunction"
+                ),
+                "operator": (
+                    "sliding-window-aggregation"
+                ),
+            },
+
+            "sinks": [
+                "console",
+                "hbase",
+                "hdfs",
+            ],
+
+            "hbase": {
+                "namespace": (
+                    self.config
+                    .hbase_namespace
+                ),
+                "table": (
+                    self.config
+                    .hbase_alert_table
+                ),
+            },
+
+            "hdfs": {
+                "path": (
+                    self.config
+                    .hdfs_output_path
+                ),
+            },
+        }
+
+
+        self._pipeline_description = (
+            pipeline_info
+        )
+
 
         logger.info(
             "Pipeline Flink construída: %s",
             self.config.job_name,
         )
 
-        return env
 
+        return pipeline_info
     def start(self) -> None:
 
         if self._running:
+
             logger.warning(
                 "O job Flink '%s' já está em execução.",
                 self.config.job_name,
             )
+
             return
 
+
         if self._pipeline is None:
+
             self.build_pipeline()
+
 
         logger.info(
             "Iniciando job Flink '%s' com paralelismo %d.",
@@ -432,35 +564,52 @@ class FlinkStreamingJob:
             self.config.parallelism,
         )
 
+
         self._running = True
 
+
         try:
+
             self._pipeline.execute(
                 self.config.job_name
             )
+
         finally:
+
             self._running = False
+
+
 
     def stop(self) -> None:
 
         if not self._running:
+
             return
+
 
         logger.info(
             "Encerrando job Flink '%s'.",
             self.config.job_name,
         )
 
+
         self._running = False
+
+
 
     def healthcheck(self) -> bool:
 
         try:
+
             self.config.validate()
+
         except ValueError:
+
             return False
 
+
         return True
+
 
 
 def create_flink_job(
@@ -470,6 +619,7 @@ def create_flink_job(
     return FlinkStreamingJob(
         config=config
     )
+
 
 
 def main() -> None:
@@ -482,17 +632,26 @@ def main() -> None:
         ),
     )
 
+
     job = create_flink_job()
 
+
     if not job.healthcheck():
+
         raise RuntimeError(
             "Configuração inválida para o job Flink."
         )
+
 
     job.build_pipeline()
 
     job.start()
 
 
+
 if __name__ == "__main__":
+
     main()
+
+
+
