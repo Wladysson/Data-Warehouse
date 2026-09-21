@@ -45,7 +45,9 @@ responsabilidade específica no ciclo de vida do dado.
 
 Outra observação importante é que nenhuma das tecnologias anda competindo, pois cada uma atende padrões de processamento diferentes, como por exemplo o nosso Flink que trata o fluxo contínuo de eventos em tempo real, enquanto Spark processa o histórico em batch para consolidação analítica no Hive.
 
-<img src="./docs/imagens/principal.png">
+<p align="center">
+  <img src="./docs/imagens/diagramaprincipal.png">
+</p>
 
 
 ## 🏗️ Principios de Arquitetura
@@ -99,9 +101,9 @@ cada camada tem suas imagens e explicaçao em suas devidas configurações.
 
 ### Transporte e Entrega
 
-# Processamento de Dados
+# Processamento e Streaming
 
-### Métricas do Pipeline
+### Métricas do Desempenho
 O processamento dos eventos é realizado de forma distribuída utilizando
 Apache Flink, responsável pelo tratamento contínuo dos eventos recebidos
 pela camada de ingestão.
@@ -125,15 +127,18 @@ O job utiliza uma estratégia de bounded out-of-orderness, configurada com uma t
 
 ---
 
-### Janelas Temporais
+### Janelas Temporais Deslizantes 
 
 A aplicação utiliza Sliding Windows baseadas em Event Time para realizar agregações contínuas sobre intervalos temporais sobrepostos. Cada janela possui 60 segundos de duração e é deslocada a cada 10 segundos, produzindo uma nova avaliação do fluxo em intervalos regulares.
 
-<img src="./docs/imagens/fontes/janela.png"><br>
+<p align="center">
+  <img src="./docs/imagens/fontes/janela.png" alt="Texto alternativo" width="700">
+</p>
+
 
 Cada nova janela avança 10 segundos, enquanto mantém uma duração total de 60 segundos. Como consequência, existe uma sobreposição de 50 segundos entre duas janelas consecutivas.
 
-<img src="./docs/imagens/fontes/detalhamento_job3.png">
+<img src="./docs/imagens/fontes/detalhamento_job3.png"><br>
 
 Todos os eventos são posicionados nas janelas utilizando o Event Time associado ao event_timestamp. Dessa forma, a participação de um evento em uma janela é determinada pelo seu instante de ocorrência, e não simplesmente pelo momento em que o registro chegou ao operador.
 
