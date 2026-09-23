@@ -1,7 +1,8 @@
-FROM eclipse-temurin:11-jre
+FROM eclipse-temurin:8-jre
 
-ARG HIVE_VERSION=4.0.1
+ARG HIVE_VERSION=3.1.3
 ARG HADOOP_VERSION=3.3.6
+ARG POSTGRESQL_JDBC_VERSION=42.7.8
 
 ENV HIVE_HOME=/opt/hive \
     HIVE_CONF_DIR=/opt/hive/conf \
@@ -18,7 +19,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl -fsSL \
-    "https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz" \
+    "https://dlcdn.apache.org/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz" \
     -o /tmp/hadoop.tar.gz \
     && tar -xzf /tmp/hadoop.tar.gz -C /opt \
     && mv "/opt/hadoop-${HADOOP_VERSION}" "${HADOOP_HOME}" \
@@ -28,11 +29,15 @@ COPY configs/hadoop/core-site.xml ${HADOOP_CONF_DIR}/core-site.xml
 COPY configs/hadoop/hdfs-site.xml ${HADOOP_CONF_DIR}/hdfs-site.xml
 
 RUN curl -fsSL \
-    "https://archive.apache.org/dist/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz" \
+    "https://repo.huaweicloud.com/apache/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz" \
     -o /tmp/hive.tar.gz \
     && tar -xzf /tmp/hive.tar.gz -C /opt \
     && mv "/opt/apache-hive-${HIVE_VERSION}-bin" "${HIVE_HOME}" \
     && rm /tmp/hive.tar.gz
+
+RUN curl -fsSL \
+    "https://jdbc.postgresql.org/download/postgresql-${POSTGRESQL_JDBC_VERSION}.jar" \
+    -o "${HIVE_HOME}/lib/postgresql-${POSTGRESQL_JDBC_VERSION}.jar"
 
 COPY configs/hive/hive-site.xml ${HIVE_CONF_DIR}/hive-site.xml
 COPY configs/hive/hive-env.sh ${HIVE_CONF_DIR}/hive-env.sh
@@ -47,6 +52,6 @@ RUN chmod +x ${HIVE_CONF_DIR}/hive-env.sh \
 
 WORKDIR /opt/hive
 
-EXPOSE 10000 10002
+EXPOSE 9083 10000 10002
 
 CMD ["hiveserver2"]

@@ -22,15 +22,51 @@
         <value>binary</value>
     </property>
 
-    <!-- Metastore embutido -->
+    <property>
+        <name>hive.server2.enable.doAs</name>
+        <value>false</value>
+    </property>
+
+    <!-- Hive Metastore remoto -->
     <property>
         <name>hive.metastore.uris</name>
-        <value></value>
+        <value>thrift://hive-metastore:9083</value>
     </property>
 
     <property>
         <name>hive.metastore.thrift.port</name>
         <value>9083</value>
+    </property>
+
+    <!-- Banco do Hive Metastore -->
+    <property>
+        <name>javax.jdo.option.ConnectionURL</name>
+        <value>jdbc:postgresql://hive-postgres:5432/hive_metastore</value>
+    </property>
+
+    <property>
+        <name>javax.jdo.option.ConnectionDriverName</name>
+        <value>org.postgresql.Driver</value>
+    </property>
+
+    <property>
+        <name>javax.jdo.option.ConnectionUserName</name>
+        <value>hive</value>
+    </property>
+
+    <property>
+        <name>javax.jdo.option.ConnectionPassword</name>
+        <value>hive</value>
+    </property>
+
+    <property>
+        <name>datanucleus.autoCreateSchema</name>
+        <value>false</value>
+    </property>
+
+    <property>
+        <name>datanucleus.schema.autoCreateAll</name>
+        <value>false</value>
     </property>
 
     <!-- Warehouse principal no HDFS -->
@@ -87,7 +123,7 @@
     <!-- Metastore -->
     <property>
         <name>hive.metastore.schema.verification</name>
-        <value>false</value>
+        <value>true</value>
     </property>
 
     <property>

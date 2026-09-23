@@ -82,6 +82,62 @@ services:
     networks:
       - ecommerce-bigdata
 
+  hive-postgres:
+    image: postgres:16-alpine
+    container_name: ecommerce-hive-postgres
+    hostname: hive-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${HIVE_METASTORE_DB}
+      POSTGRES_USER: ${HIVE_METASTORE_USER}
+      POSTGRES_PASSWORD: ${HIVE_METASTORE_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${HIVE_METASTORE_USER} -d ${HIVE_METASTORE_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - hive_postgres_data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-bigdata
+
+  hive-metastore:
+    build:
+      context: ..
+      dockerfile: docker/services/hive/Dockerfile
+    container_name: ecommerce-hive-metastore
+    hostname: hive-metastore
+    restart: unless-stopped
+    environment:
+      HIVE_VERSION: ${HIVE_VERSION}
+      HIVE_METASTORE_DB: ${HIVE_METASTORE_DB}
+      HIVE_METASTORE_USER: ${HIVE_METASTORE_USER}
+      HIVE_METASTORE_PASSWORD: ${HIVE_METASTORE_PASSWORD}
+    depends_on:
+      - hive-postgres
+      - namenode
+      - datanode
+    command:
+      - bash
+      - -lc
+      - |
+        exec /opt/hive/bin/hive \
+          --service metastore \
+          --hiveconf javax.jdo.option.ConnectionURL=jdbc:postgresql://hive-postgres:5432/hive_metastore \
+          --hiveconf javax.jdo.option.ConnectionDriverName=org.postgresql.Driver \
+          --hiveconf javax.jdo.option.ConnectionUserName=hive \
+          --hiveconf javax.jdo.option.ConnectionPassword=hive \
+          --hiveconf hive.metastore.schema.verification=true \
+          --hiveconf hive.metastore.thrift.port=9083
+    ports:
+      - "9083:9083"
+    volumes:
+      - hive_data:/opt/hive/data
+      - ../configs/hive/hive-site.xml:/opt/hive/conf/hive-site.xml:ro
+      - ../configs/hive/hive-env.sh:/opt/hive/conf/hive-env.sh:ro
+    networks:
+      - ecommerce-bigdata
+
   hive:
     build:
       context: ..
@@ -94,12 +150,23 @@ services:
       HIVE_METASTORE_DB: ${HIVE_METASTORE_DB}
       HIVE_METASTORE_USER: ${HIVE_METASTORE_USER}
       HIVE_METASTORE_PASSWORD: ${HIVE_METASTORE_PASSWORD}
+      HIVE_SERVER2_THRIFT_BIND_HOST: "0.0.0.0"
+      HIVE_SERVER2_THRIFT_PORT: "10000"
+      HADOOP_CLIENT_OPTS: "-Xmx512m"
     depends_on:
       - namenode
       - datanode
+      - hive-metastore
+    command:
+      - bash
+      - -lc
+      - |
+        exec /opt/hive/bin/hiveserver2 \
+          --hiveconf hive.server2.thrift.bind.host=0.0.0.0 \
+          --hiveconf hive.server2.thrift.port=10000 \
+          --hiveconf hive.server2.transport.mode=binary
     ports:
       - "10000:10000"
-      - "10002:10002"
     volumes:
       - hive_data:/opt/hive/data
       - ../configs/hive/hive-site.xml:/opt/hive/conf/hive-site.xml:ro
@@ -108,7 +175,6 @@ services:
       - ecommerce-bigdata
 
   flink:
-
     build:
       context: ..
       dockerfile: docker/services/flink/Dockerfile
@@ -140,32 +206,33 @@ services:
       - ecommerce-bigdata
 
   spark:
-    build:
-      context: ..
-      dockerfile: docker/services/spark/Dockerfile
-    container_name: ecommerce-spark
-    hostname: spark
-    restart: unless-stopped
-    environment:
-      SPARK_VERSION: ${SPARK_VERSION}
-      HDFS_NAMENODE_HOST: ${HDFS_NAMENODE_HOST}
-      HDFS_NAMENODE_PORT: ${HDFS_NAMENODE_PORT}
-    depends_on:
-      - namenode
-      - datanode
-      - hive
-    ports:
-      - "4040:4040"
-      - "7077:7077"
-      - "8080:8080"
-    volumes:
-      - ../configs/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
-      - ../configs/spark/hive-site.xml:/opt/spark/conf/hive-site.xml:ro
-      - ../configs/spark/log4j.properties:/opt/spark/conf/log4j.properties:ro
-      - ../src:/app/src:ro
-      - ../data:/app/data
-    networks:
-      - ecommerce-bigdata
+      build:
+        context: ..
+        dockerfile: docker/services/spark/Dockerfile
+      container_name: ecommerce-spark
+      hostname: spark
+      restart: unless-stopped
+      environment:
+        SPARK_VERSION: ${SPARK_VERSION}
+        HDFS_NAMENODE_HOST: ${HDFS_NAMENODE_HOST}
+        HDFS_NAMENODE_PORT: ${HDFS_NAMENODE_PORT}
+      depends_on:
+        - namenode
+        - datanode
+        - hive
+        - hive-metastore
+      ports:
+        - "4040:4040"
+        - "7077:7077"
+        - "8080:8080"
+      volumes:
+        - ../configs/spark/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
+        - ../configs/spark/hive-site.xml:/opt/spark/conf/hive-site.xml:ro
+        - ../configs/spark/log4j.properties:/opt/spark/conf/log4j.properties:ro
+        - ../src:/app/src:ro
+        - ../data:/app/data
+      networks:
+        - ecommerce-bigdata
 
   generator:
     build:
@@ -213,3 +280,4 @@ volumes:
   datanode_data:
   hbase_data:
   hive_data:
+  hive_postgres_data:
