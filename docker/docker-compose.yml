@@ -162,11 +162,12 @@ services:
       - -lc
       - |
         exec /opt/hive/bin/hiveserver2 \
+          --hiveconf hive.metastore.uris=thrift://hive-metastore:9083 \
           --hiveconf hive.server2.thrift.bind.host=0.0.0.0 \
           --hiveconf hive.server2.thrift.port=10000 \
           --hiveconf hive.server2.transport.mode=binary
     ports:
-      - "10000:10000"
+        - "10000:10000"
     volumes:
       - hive_data:/opt/hive/data
       - ../configs/hive/hive-site.xml:/opt/hive/conf/hive-site.xml:ro
@@ -273,6 +274,7 @@ services:
 
 networks:
   ecommerce-bigdata:
+    name: ecommerce-bigdata
     driver: bridge
 
 volumes:
