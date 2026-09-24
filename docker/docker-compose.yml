@@ -176,6 +176,7 @@ services:
       - ecommerce-bigdata
 
   flink:
+
     build:
       context: ..
       dockerfile: docker/services/flink/Dockerfile

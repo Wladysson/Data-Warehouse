@@ -38,12 +38,29 @@
 
 ## 📖 Visão Geral
 
-A pipeline percore todas as etapas do ciclo de vida do dado, da geração ao armazenamento analítico. Cada camada abaixo corresponde a uma frente técnica do trabalho.
+O Laboratorio tem como objetivo principal a construção de um pipeline varejista que percore todas as etapas do ciclo de vida do dado, da geração ao armazenamento analítico. Cada camada abaixo corresponde a uma frente técnica do trabalho.
 
-Esse laboratorio utiliza diferentes tecnologias e ferramentas nao só pelas funcionalidades, mas sim porque cada componente possui uma
+Esse projeto em questão utiliza diferentes tecnologias e ferramentas nao só pelas funcionalidades, mas sim porque cada componente possui uma
 responsabilidade específica no ciclo de vida do dado.
 
-Outra observação importante é que nenhuma das tecnologias anda competindo, pois cada uma atende padrões de processamento diferentes, como por exemplo: Flink trata o fluxo contínuo de eventos em tempo real, enquanto Spark processa o histórico em batch para consolidação analítica no Hive.
+Outra observação importante é que nenhuma das tecnologias anda competindo, pois cada uma atende padrões de processamento diferentes, onde podemos analisar na imagem abaixo, o pipeline combina processamento de streaming e batch a partir dos eventos
+gerados continuamente pelo Python. O [Apache Flume](https://flume.apache.org/)
+realiza a ingestão e persiste os eventos brutos no
+[HDFS](https://hadoop.apache.org/), que funciona como base para os dois fluxos
+de processamento. No caminho de streaming, o
+[Apache Flink](https://flink.apache.org/) processa os eventos utilizando
+Event Time, watermarks e janelas deslizantes, armazenando os resultados em
+tempo real no [HBase](https://hbase.apache.org/). No caminho batch, o
+[Apache Spark](https://spark.apache.org/) processa o histórico armazenado no
+HDFS por meio de RDDs e Spark SQL, realizando transformações, joins e
+agregações antes da consolidação dos dados no
+[Hive](https://hive.apache.org/) como Data Warehouse.
+
+<p align="center">
+  <img src="./docs/imagens/diagramaprincipal.png">
+</p>
+
+---
 
 
 ## 🏗️ Principios de Arquitetura
@@ -51,7 +68,7 @@ Outra observação importante é que nenhuma das tecnologias anda competindo, po
 | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
 | Geração de Dados                      | Geração contínua e controlada de eventos representando o comportamento de usuários, vendas e operações logísticas. | data_generator utiliza Python 3 para produzir eventos JSON de cliques, carrinhos, pedidos e entregas, controlando volume, velocidade e timestamps.                  |
 | Ingestão                          | Recepção, desacoplamento e distribuição contínua dos eventos para as camadas de processamento e armazenamento.                                         | Apache Flume coleta os eventos gerados e realiza a ingestão no ecossistema Hadoop, direcionando os dados para processamento e persistência.           |
-|  Streaming                     | Processamento de eventos em tempo real considerando o tempo do evento e a chegada de dados fora de ordem.                                 | Apache Flink utiliza Event Time, Watermarks e Sliding Windows para processar eventos continuamente, identificar padrões e gerar alertas em tempo real.                       |
+|  Streaming                     | Processamento de eventos em tempo real considerando o tempo do evento e a chegada de dados fora de ordem.                                 | Apache Flink utiliza Event Time, Watermarks e Sliding Windows para processar eventos continuamente, identificar padrões.                       |
 |    Batch                | Processamento histórico dos dados para limpeza, transformação, junção e geração de informações analíticas consolidadas.                                           | Apache Spark executa jobs de ETL utilizando RDDs, Spark SQL, agregações e joins, processando os dados históricos armazenados no HDFS.                                                |
 |     Armazenamento                          | Separação das necessidades de armazenamento bruto, acesso de baixa latência e análise histórica.                                          | HDFS armazena os dados brutos em grande escala, HBase mantém alertas e resultados para consultas rápidas, e Hive organiza os dados consolidados como Data Warehouse.          |
 
@@ -75,10 +92,10 @@ Outra observação importante é que nenhuma das tecnologias anda competindo, po
 
 # 🧭 Arquitetura, Fluxos e Diagramas
 
-Esta seção apresenta os principais fluxos, componentes e decisões arquiteturais implementados na plataforma até o momento.
-As imagens abaixo representam diferentes estágios de desenvolvimento e teste e destinam-se a fornecer evidência visual da plataforma operando com sucesso.
+Esta seção apresenta os principais fluxos, componentes, testes e decisões arquiteturais implementados no pipeline.
+As imagens abaixo representam diferentes estágios de desenvolvimento e teste e destinam-se a fornecer evidência visual operando com sucesso.
 
-Os diagramas têm como objetivo facilitar a compreensão das interações entre serviços, infraestrutura e componentes da plataforma, servindo também como referência durante o desenvolvimento e evolução da arquitetura.
+Os diagramas têm como objetivo facilitar a compreensão das interações entre as funcionalidades, infraestrutura e componentes do mesmo, servindo também como referência durante o desenvolvimento e evolução da arquitetura.
 
 > Os screenshots são intencionalmente apresentados como evidência de implementação em vez de estarem atrelados a uma categoria específica de documentação. No entanto, 
 cada camada tem suas imagens e explicaçao em suas devidas configurações.
@@ -87,4 +104,116 @@ cada camada tem suas imagens e explicaçao em suas devidas configurações.
 
 ---
 
-continuamos apartir daqui: 
+# Padrões de Arquitetura do Pipeline
+
+## Fluxo de Dados
+
+# Ingestão de Dados
+
+### Coleta com Apache Flume
+
+### Transporte e Entrega
+
+---
+
+# Processamento e Streaming 
+
+### Métricas do Desempenho
+O processamento dos eventos é realizado de forma distribuída utilizando
+Apache Flink, responsável pelo tratamento contínuo dos eventos recebidos
+pela camada de ingestão.
+
+Os eventos são produzidos pelo gerador Python em formato JSON e disponibilizados para o processo de ingestão. O Apache Flume acompanha o arquivo de eventos e encaminha os registros para o armazenamento em HDFS. O job Flink utiliza esses dados como fonte de streaming para iniciar o processamento.
+
+<img src="./docs/imagens/fontes/consumo_principal1.png"><br>
+
+A execução pode ser acompanhada por meio da interface do Flink, que
+permite observar o volume processado e o estado dos operadores que durante a execução do ecommerce-streaming-job, o painel do Apache Flink registrou 12.400 registros recebidos pela fonte de processamento. Essa métrica representa eventos que efetivamente chegaram ao job durante a execução observada, permitindo demonstrar o funcionamento do fluxo de ingestão e processamento contínuo.
+
+---
+
+### Watermarks e Eventos Fora de Ordem
+
+Neste pipeline utilizamos Event Time para determinar a posição temporal dos eventos a partir do campo event_timestamp, em vez de utilizar exclusivamente o instante em que o registro é recebido pelo Flink. Após o parsing e a validação dos eventos, o timestamp de cada registro é extraído e utilizado na atribuição dos timestamps e na geração dos watermarks.
+
+<img src="./docs/imagens/fontes/jobs_completos2.png"><br>
+
+O job utiliza uma estratégia de bounded out-of-orderness, configurada com uma tolerância de 10 segundos para eventos que chegam fora de ordem. O watermark representa uma estimativa do progresso do tempo de evento e permite que o Flink avance o processamento temporal mantendo uma margem para a chegada tardia de registros.
+
+---
+
+### Janelas Temporais Deslizantes 
+
+A aplicação utiliza Sliding Windows baseadas em Event Time para realizar agregações contínuas sobre intervalos temporais sobrepostos. Cada janela possui 60 segundos de duração e é deslocada a cada 10 segundos, produzindo uma nova avaliação do fluxo em intervalos regulares.
+
+<p align="center">
+  <img src="./docs/imagens/fontes/janela.png" alt="Texto alternativo" width="700">
+</p>
+
+
+Cada nova janela avança 10 segundos, enquanto mantém uma duração total de 60 segundos. Como consequência, existe uma sobreposição de 50 segundos entre duas janelas consecutivas.
+
+<img src="./docs/imagens/fontes/detalhamento_job3.png"><br>
+
+Todos os eventos são posicionados nas janelas utilizando o Event Time associado ao event_timestamp. Dessa forma, a participação de um evento em uma janela é determinada pelo seu instante de ocorrência, e não simplesmente pelo momento em que o registro chegou ao operador.
+
+---
+
+# Processamento Batch
+
+### Execução dos Jobs no Apache Spark
+
+Chegando no processamento em lote, que podemos analisar pela interface do Spark, onde a aplicação executou diferentes operações de processamento e transformação sobre os dados históricos. A interface permite acompanhar o relacionamento entre as operações realizadas e os Jobs Spark responsáveis pela execução dessas etapas.
+
+<img src="./docs/imagens/fontes/batch.png"><br>
+
+A execução dos Jobs representa a etapa de processamento batch do pipeline, na qual o Apache Spark realiza as transformações sobre o histórico de dados e disponibiliza os resultados para as etapas analíticas posteriores no HIVE.
+
+---
+
+### Transformações SQL / DATAFRAME
+
+Ja na transformaçao batch, o Spark realiza o ETL sobre os dados históricos. Primeiro fazemos a leitura dos arquivos, depois aplicamos filtros e, por fim, uma agregação para gerar os indicadores. Durante a agregação ocorre um Exchange, caracterizando uma wide dependency e permitindo observar o shuffle produzido pelo processamento distribuído.
+
+<img src="./docs/imagens/fontes/etl.png"><br>
+
+A execução apresentada na interface **SQL / DataFrame** permite observar detalhadamente o plano físico utilizado pelo Spark durante o processamento.
+
+O fluxo de execução é composto pelas seguintes etapas:
+
+```text
+Scan JSON
+    ↓
+Filter
+    ↓
+Project
+    ↓
+Exchange
+    ↓
+HashAggregate
+    ↓
+Resultado
+```
+
+O **Scan JSON** representa a leitura dos dados históricos. Nessa execução, foram lidos **20 arquivos**, totalizando **12.220 registros**. Após a aplicação do `Filter`, o conjunto é reduzido para **6.110 registros**, mantendo apenas os dados relevantes para o processamento.
+
+Na sequência, o `Project` realiza a seleção e transformação das colunas utilizadas na análise. O processamento então chega ao `Exchange`, responsável pela redistribuição dos dados entre as partições. Essa etapa gera o **shuffle** e caracteriza uma **wide dependency**, pois os dados precisam ser reorganizados entre diferentes partições para que a etapa seguinte possa ser executada.
+
+Por fim, o `HashAggregate` consolida os dados e produz **10 registros de saída**. A agregação apresentou aproximadamente **556 ms de tempo total**, com **96 ms como maior tempo observado** entre as tarefas.
+
+Essas métricas permitem acompanhar não somente o resultado do ETL, mas também o comportamento do processamento distribuído, mostrando o volume de dados em cada etapa, a redistribuição realizada pelo shuffle e a agregação utilizada para gerar os indicadores.
+
+
+
+---
+
+# Modelagem e Camadas de Dados
+
+# Orquestração e Containers
+
+# Monitoramento
+
+# Testes
+
+# Implementações Futuras
+
