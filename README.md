@@ -114,7 +114,9 @@ cada camada tem suas imagens e explicaçao em suas devidas configurações.
 
 ### Transporte e Entrega
 
-# Processamento e Streaming
+---
+
+# Processamento e Streaming 
 
 ### Métricas do Desempenho
 O processamento dos eventos é realizado de forma distribuída utilizando
@@ -157,9 +159,53 @@ Todos os eventos são posicionados nas janelas utilizando o Event Time associado
 
 ---
 
-### Batch
+# Processamento Batch
 
-### Transformações e Joins
+### Execução dos Jobs no Apache Spark
+
+Chegando no processamento em lote, que podemos analisar pela interface do Spark, onde a aplicação executou diferentes operações de processamento e transformação sobre os dados históricos. A interface permite acompanhar o relacionamento entre as operações realizadas e os Jobs Spark responsáveis pela execução dessas etapas.
+
+<img src="./docs/imagens/fontes/batch.png"><br>
+
+A execução dos Jobs representa a etapa de processamento batch do pipeline, na qual o Apache Spark realiza as transformações sobre o histórico de dados e disponibiliza os resultados para as etapas analíticas posteriores no HIVE.
+
+---
+
+### Transformações SQL / DATAFRAME
+
+Ja na transformaçao batch, o Spark realiza o ETL sobre os dados históricos. Primeiro fazemos a leitura dos arquivos, depois aplicamos filtros e, por fim, uma agregação para gerar os indicadores. Durante a agregação ocorre um Exchange, caracterizando uma wide dependency e permitindo observar o shuffle produzido pelo processamento distribuído.
+
+<img src="./docs/imagens/fontes/etl.png"><br>
+
+A execução apresentada na interface **SQL / DataFrame** permite observar detalhadamente o plano físico utilizado pelo Spark durante o processamento.
+
+O fluxo de execução é composto pelas seguintes etapas:
+
+```text
+Scan JSON
+    ↓
+Filter
+    ↓
+Project
+    ↓
+Exchange
+    ↓
+HashAggregate
+    ↓
+Resultado
+```
+
+O **Scan JSON** representa a leitura dos dados históricos. Nessa execução, foram lidos **20 arquivos**, totalizando **12.220 registros**. Após a aplicação do `Filter`, o conjunto é reduzido para **6.110 registros**, mantendo apenas os dados relevantes para o processamento.
+
+Na sequência, o `Project` realiza a seleção e transformação das colunas utilizadas na análise. O processamento então chega ao `Exchange`, responsável pela redistribuição dos dados entre as partições. Essa etapa gera o **shuffle** e caracteriza uma **wide dependency**, pois os dados precisam ser reorganizados entre diferentes partições para que a etapa seguinte possa ser executada.
+
+Por fim, o `HashAggregate` consolida os dados e produz **10 registros de saída**. A agregação apresentou aproximadamente **556 ms de tempo total**, com **96 ms como maior tempo observado** entre as tarefas.
+
+Essas métricas permitem acompanhar não somente o resultado do ETL, mas também o comportamento do processamento distribuído, mostrando o volume de dados em cada etapa, a redistribuição realizada pelo shuffle e a agregação utilizada para gerar os indicadores.
+
+
+
+---
 
 # Modelagem e Camadas de Dados
 
