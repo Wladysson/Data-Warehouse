@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Any, Dict, Optional
 from pyflink.datastream import DataStream
 
@@ -18,7 +19,9 @@ from pyflink.datastream import (
     DataStream,
     StreamExecutionEnvironment,
 )
-from pyflink.datastream.functions import ProcessWindowFunction
+from pyflink.datastream.functions import MapFunction, ProcessWindowFunction
+from src.streaming.sinks.hbase_sink import HBaseSink
+from src.streaming.models import WindowAggregation
 from pyflink.datastream.window import (
     SlidingEventTimeWindows,
     Time,
@@ -210,7 +213,75 @@ class WindowAggregationFunction(
             result,
             ensure_ascii=False,
         )
+        
+class HBaseWindowPersistence(MapFunction):
+    def __init__(
+        self,
+        host: str = "hbase",
+        port: int = 9090,
+        namespace: str = "ecommerce",
+        table_name: str = "realtime_alerts",
+    ) -> None:
+        self.host = host
+        self.port = port
+        self.namespace = namespace
+        self.table_name = table_name
+        self._sink: Optional[HBaseSink] = None
 
+    def map(self, value: str) -> str:
+        if self._sink is None:
+            self._sink = HBaseSink(
+                host=self.host,
+                port=self.port,
+                namespace=self.namespace,
+                table_name=self.table_name,
+            )
+            self._sink.connect()
+
+            logger.info(
+                "HBase conectado: %s:%d/%s:%s",
+                self.host,
+                self.port,
+                self.namespace,
+                self.table_name,
+            )
+
+        payload = json.loads(value)
+
+        window_start = datetime.fromtimestamp(
+            int(payload["window_start"]) / 1000,
+            tz=timezone.utc,
+        )
+
+        window_end = datetime.fromtimestamp(
+            int(payload["window_end"]) / 1000,
+            tz=timezone.utc,
+        )
+
+        aggregation = WindowAggregation(
+            window_start=window_start,
+            window_end=window_end,
+            event_type="WINDOW_AGGREGATION",
+            event_count=int(payload.get("event_count", 0)),
+            unique_customers=int(payload.get("unique_customers", 0)),
+            total_quantity=int(payload.get("total_quantity", 0)),
+            total_amount=Decimal(
+                str(payload.get("total_amount", 0))
+            ),
+            key=payload.get("customer_id"),
+            metadata={
+                "event_types": payload.get("event_types", [])
+            },
+        )
+
+        row_key = self._sink.write_aggregation(aggregation)
+
+        logger.info(
+            "HBASE GRAVOU: %s",
+            row_key,
+        )
+
+        return value
 
 class FlinkStreamingJob:
 
@@ -403,6 +474,18 @@ class FlinkStreamingJob:
             "STREAMING-WINDOW"
         ).name(
             "streaming-window-console-sink"
+        )
+        
+        aggregated_events = aggregated_events.map(
+            HBaseWindowPersistence(
+                host="hbase",
+                port=9090,
+                namespace=self.config.hbase_namespace,
+                table_name=self.config.hbase_alert_table,
+            ),
+            output_type=Types.STRING(),
+        ).name(
+            "hbase-realtime-aggregation-persistence"
         )
 
         self._pipeline = env

@@ -22,7 +22,9 @@ RUN curl -fsSL \
     && rm /tmp/hadoop.tar.gz
 
 RUN pip3 install --no-cache-dir \
-    apache-flink==1.20.3
+    apache-flink==1.20.3 \
+    "happybase>=1.2,<2.0" \
+    "thrift>=0.20,<1.0"
 
 COPY configs/flink/flink-conf.yaml /opt/flink/conf/flink-conf.yaml
 COPY configs/flink/log4j2.xml /opt/flink/conf/log4j2.xml
