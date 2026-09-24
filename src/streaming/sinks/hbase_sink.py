@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Dict, Iterable
 
 from src.streaming.models import (
     AlertEvent,
@@ -19,7 +18,7 @@ class HBaseSink:
     def __init__(
         self,
         host: str = "hbase",
-        port: int = 16000,
+        port: int = 9090,
         namespace: str = "ecommerce",
         table_name: str = "realtime_alerts",
         column_family: str = "cf",
@@ -308,6 +307,11 @@ class HBaseSink:
             data,
         )
 
+        logger.info(
+            "Agregação persistida no HBase: row_key=%s",
+            key,
+        )
+
         return key
 
     def healthcheck(self) -> bool:
@@ -318,22 +322,12 @@ class HBaseSink:
             return True
 
         except Exception as exc:
-            logger.warning(
-                "Healthcheck HBase falhou: %s",
+            logger.error(
+                "Falha no healthcheck HBase: %s",
                 exc,
             )
             return False
 
-    def describe(self) -> Dict[str, Any]:
-        return {
-            "type": "hbase",
-            "host": self.host,
-            "port": self.port,
-            "namespace": self.namespace,
-            "table": self.table_name,
-            "qualified_table": (
-                self.qualified_table_name
-            ),
-            "column_family": self.column_family,
-            "connected": self.connected,
-        }
+        finally:
+            self.close()
+
