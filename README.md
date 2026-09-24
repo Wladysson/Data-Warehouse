@@ -116,7 +116,7 @@ cada camada tem suas imagens e explicaçao em suas devidas configurações.
 
 ---
 
-# Processamento e Streaming 
+# Processamento Streaming 🐿️
 
 ### Métricas do Desempenho
 O processamento dos eventos é realizado de forma distribuída utilizando
@@ -159,7 +159,7 @@ Todos os eventos são posicionados nas janelas utilizando o Event Time associado
 
 ---
 
-# Processamento Batch
+# Processamento Batch 📦
 
 ### Execução dos Jobs no Apache Spark
 
@@ -171,29 +171,13 @@ A execução dos Jobs representa a etapa de processamento batch do pipeline, na 
 
 ---
 
-### Transformações SQL / DATAFRAME
+### Transformações ETL SQL / DATAFRAME
 
 Ja na transformaçao batch, o Spark realiza o ETL sobre os dados históricos. Primeiro fazemos a leitura dos arquivos, depois aplicamos filtros e, por fim, uma agregação para gerar os indicadores. Durante a agregação ocorre um Exchange, caracterizando uma wide dependency e permitindo observar o shuffle produzido pelo processamento distribuído.
 
 <img src="./docs/imagens/fontes/etl.png"><br>
 
 A execução apresentada na interface **SQL / DataFrame** permite observar detalhadamente o plano físico utilizado pelo Spark durante o processamento.
-
-O fluxo de execução é composto pelas seguintes etapas:
-
-```text
-Scan JSON
-    ↓
-Filter
-    ↓
-Project
-    ↓
-Exchange
-    ↓
-HashAggregate
-    ↓
-Resultado
-```
 
 O **Scan JSON** representa a leitura dos dados históricos. Nessa execução, foram lidos **20 arquivos**, totalizando **12.220 registros**. Após a aplicação do `Filter`, o conjunto é reduzido para **6.110 registros**, mantendo apenas os dados relevantes para o processamento.
 
@@ -203,17 +187,33 @@ Por fim, o `HashAggregate` consolida os dados e produz **10 registros de saída*
 
 Essas métricas permitem acompanhar não somente o resultado do ETL, mas também o comportamento do processamento distribuído, mostrando o volume de dados em cada etapa, a redistribuição realizada pelo shuffle e a agregação utilizada para gerar os indicadores.
 
+---
+
+# Configuração e Camadas de Dados
+
+### HBase
+
+<img src="./docs/architecture/tdp-arquitetura-hbase.png"><br>
+
+O HBase foi configurado como camada NoSQL dos dados processados pelo Apache Flink  que foi validada diretamente na tabela ecommerce:realtime_alerts do Apache HBase. Onde, após o processamento das janelas deslizantes, as agregações produzidas pelo Flink são persistidas no HBase utilizando o HappyBase, através do serviço HBase Thrift na porta 9090.
+
+<img src="./docs/imagens/fontes/Screenshot from 2026-09-24 08-47-00.png"><br>
 
 
 ---
 
-# Modelagem e Camadas de Dados
+### Persistencia em Disco
+
+<img src="./docs/imagens/fontes/Screenshot from 2026-09-24 08-47-43.png">
+
+---
+
+### Hive
+
+<img src="./docs/imagens/fontes/hive.png">
+
+---
 
 # Orquestração e Containers
 
-# Monitoramento
-
-# Testes
-
-# Implementações Futuras
 
