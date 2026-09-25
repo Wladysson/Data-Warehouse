@@ -106,13 +106,15 @@ cada camada tem suas imagens e explicaçao em suas devidas configurações.
 
 # Padrões de Arquitetura do Pipeline
 
-## Fluxo de Dados
-
 # Ingestão de Dados
 
 ### Coleta com Apache Flume
 
-### Transporte e Entrega
+<img src="./docs/imagens/fontes/flume arq.png">
+
+### Transformação e Entrega
+
+<img src="./docs/imagens/fontes/hdfs.png">
 
 ---
 
@@ -191,11 +193,13 @@ Essas métricas permitem acompanhar não somente o resultado do ETL, mas também
 
 # Configuração e Camadas de Dados
 
-### HBase
+### HBase para alertas em tempo real do Flink
 
 <img src="./docs/architecture/tdp-arquitetura-hbase.png"><br>
 
 O HBase foi configurado como camada NoSQL dos dados processados pelo Apache Flink  que foi validada diretamente na tabela ecommerce:realtime_alerts do Apache HBase. Onde, após o processamento das janelas deslizantes, as agregações produzidas pelo Flink são persistidas no HBase utilizando o HappyBase, através do serviço HBase Thrift na porta 9090.
+
+
 
 <img src="./docs/imagens/fontes/Screenshot from 2026-09-24 08-47-00.png"><br>
 
@@ -204,13 +208,40 @@ O HBase foi configurado como camada NoSQL dos dados processados pelo Apache Flin
 
 ### Persistencia em Disco
 
-<img src="./docs/imagens/fontes/Screenshot from 2026-09-24 08-47-43.png">
+O Apache HBase é utilizado como camada de persistência para os resultados produzidos pelo processamento de streaming realizado pelo Apache Flink. Durante a execução do pipeline, os eventos são processados por janelas temporais deslizantes e, ao final de cada janela, são produzidas agregações contendo as métricas calculadas pelo processamento.
+
+Essas agregações são persistidas na tabela `ecommerce:realtime_alerts`. A integração entre o Flink e o HBase é realizada através do **HappyBase**, utilizando o **HBase Thrift Server na porta 9090**. Dessa forma, o resultado do processamento não permanece apenas no estado interno do job do Flink, sendo materializado em uma estrutura persistente que pode ser consultada posteriormente.
+
+
+<img src="./docs/imagens/fontes/Screenshot from 2026-09-24 08-47-43.png"><br>
+
+A consulta apresentada na figura confirma a persistência efetiva dos resultados produzidos pelo processamento do Flink. As linhas retornadas possuem o padrão `WINDOW_AGGREGATION` e estão associadas a diferentes clientes, demonstrando que as agregações foram materializadas individualmente na tabela `ecommerce:realtime_alerts`.
+
+Os dados armazenados na coluna `cf:metrics` preservam as métricas calculadas durante o processamento da janela, incluindo `window_start`, `window_end`, `event_count`, `unique_customers`, `total_quantity` e `total_amount`. O campo `metadata` também registra os tipos de eventos considerados na agregação.
+
+Dessa forma, o `scan` do HBase funciona como evidência da integração entre o processamento de streaming e a camada de persistência NoSQL, demonstrando que os resultados calculados pelo Flink foram efetivamente gravados e estão disponíveis para consulta após o processamento.
 
 ---
 
-### Hive
+### Hive para Analise de Negocio
 
-<img src="./docs/imagens/fontes/hive.png">
+O Apache Hive é utilizado como camada de persistência e consulta analítica dos dados processados pelo Apache Spark. Após a leitura dos eventos armazenados no HDFS, o processamento batch realiza as etapas de transformação, limpeza, normalização, conversão de tipos, joins e agregações necessárias para estruturar os dados do Data Warehouse.
+
+Os resultados são persistidos no banco `ecommerce_dw`, que contém tabelas específicas para diferentes categorias de eventos e informações analíticas, incluindo `click_events`, `sales_events`, `delivery_events`, `cart_events` e `daily_sales_summary`.
+
+A comunicação com o Hive é realizada através do **HiveServer2**, permitindo que as tabelas geradas pelo processamento Spark sejam consultadas utilizando SQL. Essa camada separa o processamento distribuído realizado pelo Spark da etapa de consulta e exploração dos dados consolidados.
+
+Enquanto as tabelas de eventos mantêm os dados estruturados para análises detalhadas, a tabela `daily_sales_summary` representa uma camada agregada, contendo indicadores consolidados de vendas por data, como quantidade de pedidos, clientes únicos, itens vendidos, valor total das vendas e valor médio dos pedidos.
+
+<img src="./docs/imagens/fontes/hive.png"><br>
+
+A consulta apresentada na figura demonstra que os dados processados pelo Spark foram efetivamente persistidos no Data Warehouse `ecommerce_dw` e estão disponíveis para consulta através do HiveServer2.
+
+Na tabela `click_events`, os registros apresentam os atributos estruturados dos eventos de interação, incluindo `event_id`, `customer_id`, `event_timestamp`, `page`, `product_id`, `click_category` e `has_conversion_intent`. Isso demonstra a materialização dos dados de eventos após o processamento batch.
+
+A consulta sobre `daily_sales_summary` demonstra a etapa de agregação analítica do pipeline. Para a data `2026-09-24`, foram registrados 950 pedidos, 950 pedidos distintos, 950 clientes únicos e 2.858 itens, com volume total de vendas de `1.449.665,52` e valor médio por pedido de `1.525,96`.
+
+Esses resultados evidenciam que o processamento não se limita à ingestão dos eventos, mas também transforma os dados brutos em estruturas persistidas e indicadores analíticos que podem ser posteriormente consultados por SQL.
 
 ---
 
