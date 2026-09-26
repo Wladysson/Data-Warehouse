@@ -189,7 +189,7 @@ Essas métricas permitem acompanhar não somente o resultado do ETL, mas também
 
 ---
 
-# Configuração e Camadas de Dados
+# Configuração e Camadas de Dados ⚙️
 
 ### HBase para alertas em tempo real do Flink
 
@@ -213,7 +213,7 @@ A consulta apresentada na figura confirma a persistência efetiva dos resultados
 
 ---
 
-# Data-Warehouse Consolidado
+# Data-Warehouse Consolidado 💾
 
 ### Hive para Analise de Negocio
 
@@ -229,6 +229,24 @@ A consulta sobre `daily_sales_summary` demonstra a etapa de agregação analíti
 
 ---
 
-# Orquestração e Containers
+# Conclusão
 
+O pipeline implementa uma arquitetura de Big Data que combina processamento em tempo real e processamento em lote para o monitoramento de eventos de um e-commerce de Ponta a Ponta. Onde, todos os teste realizados comprovaram grande estabilidade no processamento e desempenho.
+
+
+---
+
+<p align="center">
+  Copyright © 2026 <strong>Big Data Pipeline</strong>. Todos os direitos reservados.
+</p>
+
+---
+
+<div align="center">
+
+**Big Data Pipeline**
+
+Made with 🐍 Python · 🚀 Apache Flink · 📊 Apache Spark
+
+</div>
 
