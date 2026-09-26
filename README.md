@@ -38,26 +38,17 @@
 
 ## 📖 Visão Geral
 
-O Laboratorio tem como objetivo principal a construção de um pipeline varejista que percore todas as etapas do ciclo de vida do dado, da geração ao armazenamento analítico. Cada camada abaixo corresponde a uma frente técnica do trabalho.
+O laboratório tem como objetivo principal a construção de um pipeline varejista que percorre todas as etapas do ciclo de vida do dado, desde a geração dos eventos até o armazenamento e a análise. Cada camada corresponde a uma frente técnica específica do trabalho.
 
-Esse projeto em questão utiliza diferentes tecnologias e ferramentas nao só pelas funcionalidades, mas sim porque cada componente possui uma
-responsabilidade específica no ciclo de vida do dado.
+O projeto utiliza diferentes tecnologias e ferramentas não apenas por suas funcionalidades, mas principalmente porque cada componente possui uma responsabilidade específica dentro do ciclo de vida dos dados.
 
-Outra observação importante é que nenhuma das tecnologias anda competindo, pois cada uma atende padrões de processamento diferentes, onde podemos analisar na imagem abaixo, o pipeline combina processamento de streaming e batch a partir dos eventos
-gerados continuamente pelo Python. O [Apache Flume](https://flume.apache.org/)
-realiza a ingestão e persiste os eventos brutos no
-[HDFS](https://hadoop.apache.org/), que funciona como base para os dois fluxos
-de processamento. No caminho de streaming, o
-[Apache Flink](https://flink.apache.org/) processa os eventos utilizando
-Event Time, watermarks e janelas deslizantes, armazenando os resultados em
-tempo real no [HBase](https://hbase.apache.org/). No caminho batch, o
-[Apache Spark](https://spark.apache.org/) processa o histórico armazenado no
-HDFS por meio de RDDs e Spark SQL, realizando transformações, joins e
-agregações antes da consolidação dos dados no
-[Hive](https://hive.apache.org/) como Data Warehouse.
+O [Apache Flume](https://flume.apache.org/) atua como camada de ingestão, recebendo os eventos gerados pelo Python e distribuindo-os entre os diferentes caminhos da arquitetura. No caminho de streaming, os eventos são processados pelo [Apache Flink](https://flink.apache.org/) utilizando Event Time, watermarks e janelas deslizantes, permitindo o tratamento contínuo dos eventos e a geração de resultados em tempo real, que são persistidos no [Apache HBase](https://hbase.apache.org/).
 
+Paralelamente, os eventos brutos são persistidos no [HDFS](https://hadoop.apache.org/), formando o histórico utilizado pelo processamento batch. Nesse caminho, o [Apache Spark](https://spark.apache.org/) processa os dados históricos utilizando RDDs e Spark SQL, realizando transformações, joins e agregações antes da consolidação dos resultados no [Apache Hive](https://hive.apache.org/), utilizado como camada de Data Warehouse para análise dos dados processados.
+
+Dessa forma, a arquitetura separa os dois padrões de processamento: o Flink atende ao processamento contínuo dos eventos, enquanto o Spark utiliza o histórico persistido no HDFS para o processamento batch e a geração dos dados analíticos consolidados.
 <p align="center">
-  <img src="./docs/imagens/diagramaprincipal.png">
+  <img src="./docs/imagens/principal.png">
 </p>
 
 ---
@@ -104,33 +95,40 @@ cada camada tem suas imagens e explicaçao em suas devidas configurações.
 
 ---
 
-# Padrões de Arquitetura do Pipeline
-
-# Ingestão de Dados
+# Padrões de Arquitetura e Tratamento do Pipeline
 
 ### Coleta com Apache Flume
 
-<img src="./docs/imagens/fontes/flume arq.png">
+O Apache Flume atua como a camada de ingestão do pipeline, recebendo continuamente os eventos gerados pelo Python e encaminhando os dados para os destinos definidos na arquitetura. Sua estrutura é baseada no fluxo Source → Channel → Sink, permitindo desacoplar a coleta dos eventos das etapas posteriores de processamento e armazenamento.
+
+<p align="center">
+  <img src="./docs/imagens/fontes/arq_fliume.png" alt="Texto alternativo" width="700">
+</p>
+
+A arquitetura do agente organiza o caminho percorrido pelos eventos desde a entrada até a entrega, mantendo a ingestão contínua enquanto os dados são encaminhados para as próximas camadas do pipeline.
 
 ### Transformação e Entrega
 
-<img src="./docs/imagens/fontes/hdfs.png">
+Após a ingestão, os eventos são encaminhados para a camada de armazenamento, onde os dados brutos são persistidos no HDFS. Essa etapa mantém o histórico dos eventos disponível para o processamento batch realizado posteriormente pelo Apache Spark.
+
+<p align="center">
+  <img src="./docs/imagens/fontes/hdfss.png" alt="Arquitetura de armazenamento no HDFS" width="700">
+</p>
+
+O HDFS funciona como a camada distribuída de armazenamento do pipeline, mantendo os dados históricos organizados para que possam ser posteriormente lidos, transformados e processados pelo Spark antes da consolidação no Hive.
 
 ---
 
 # Processamento Streaming 🐿️
 
 ### Métricas do Desempenho
-O processamento dos eventos é realizado de forma distribuída utilizando
-Apache Flink, responsável pelo tratamento contínuo dos eventos recebidos
-pela camada de ingestão.
+O processamento dos eventos é realizado de forma distribuída utilizando Apache Flink, responsável pelo tratamento contínuo dos eventos recebidos pela camada de ingestão.
 
-Os eventos são produzidos pelo gerador Python em formato JSON e disponibilizados para o processo de ingestão. O Apache Flume acompanha o arquivo de eventos e encaminha os registros para o armazenamento em HDFS. O job Flink utiliza esses dados como fonte de streaming para iniciar o processamento.
+Os eventos são produzidos pelo gerador Python em formato JSON e disponibilizados para o processo de ingestão. O Apache Flume realiza a ingestão dos eventos e os encaminha para o fluxo de processamento em streaming, enquanto os registros brutos também são persistidos no HDFS para posterior processamento batch. O job Flink utiliza os eventos recebidos pela camada de ingestão como fonte de streaming para iniciar o processamento.
 
 <img src="./docs/imagens/fontes/consumo_principal1.png"><br>
 
-A execução pode ser acompanhada por meio da interface do Flink, que
-permite observar o volume processado e o estado dos operadores que durante a execução do ecommerce-streaming-job, o painel do Apache Flink registrou 12.400 registros recebidos pela fonte de processamento. Essa métrica representa eventos que efetivamente chegaram ao job durante a execução observada, permitindo demonstrar o funcionamento do fluxo de ingestão e processamento contínuo.
+A execução pode ser acompanhada por meio da interface do Flink, que permite observar o volume processado e o estado dos operadores. Durante a execução do `ecommerce-streaming-job`, o painel do Apache Flink registrou 12.400 registros recebidos pela fonte de processamento. Essa métrica representa eventos que efetivamente chegaram ao job durante a execução observada, permitindo demonstrar o funcionamento do fluxo de ingestão e processamento contínuo.
 
 ---
 
@@ -165,11 +163,11 @@ Todos os eventos são posicionados nas janelas utilizando o Event Time associado
 
 ### Execução dos Jobs no Apache Spark
 
-Chegando no processamento em lote, que podemos analisar pela interface do Spark, onde a aplicação executou diferentes operações de processamento e transformação sobre os dados históricos. A interface permite acompanhar o relacionamento entre as operações realizadas e os Jobs Spark responsáveis pela execução dessas etapas.
+Chegando ao processamento em lote, que pode ser analisado por meio da interface do Spark, a aplicação executou diferentes operações de processamento e transformação sobre os dados históricos. A interface permite acompanhar o relacionamento entre as operações realizadas e os Jobs Spark responsáveis pela execução dessas etapas.
 
 <img src="./docs/imagens/fontes/batch.png"><br>
 
-A execução dos Jobs representa a etapa de processamento batch do pipeline, na qual o Apache Spark realiza as transformações sobre o histórico de dados e disponibiliza os resultados para as etapas analíticas posteriores no HIVE.
+A execução dos Jobs representa a etapa de processamento batch do pipeline, na qual o Apache Spark realiza as transformações sobre o histórico de dados e disponibiliza os resultados para as etapas analíticas posteriores no Hive.
 
 ---
 
@@ -195,33 +193,27 @@ Essas métricas permitem acompanhar não somente o resultado do ETL, mas também
 
 ### HBase para alertas em tempo real do Flink
 
-<img src="./docs/architecture/tdp-arquitetura-hbase.png"><br>
-
 O HBase foi configurado como camada NoSQL dos dados processados pelo Apache Flink  que foi validada diretamente na tabela ecommerce:realtime_alerts do Apache HBase. Onde, após o processamento das janelas deslizantes, as agregações produzidas pelo Flink são persistidas no HBase utilizando o HappyBase, através do serviço HBase Thrift na porta 9090.
 
-
-
-<img src="./docs/imagens/fontes/Screenshot from 2026-09-24 08-47-00.png"><br>
-
-
----
-
-### Persistencia em Disco
+<img src="./docs/architecture/tdp-arquitetura-hbase.png"><br>
 
 O Apache HBase é utilizado como camada de persistência para os resultados produzidos pelo processamento de streaming realizado pelo Apache Flink. Durante a execução do pipeline, os eventos são processados por janelas temporais deslizantes e, ao final de cada janela, são produzidas agregações contendo as métricas calculadas pelo processamento.
 
-Essas agregações são persistidas na tabela `ecommerce:realtime_alerts`. A integração entre o Flink e o HBase é realizada através do **HappyBase**, utilizando o **HBase Thrift Server na porta 9090**. Dessa forma, o resultado do processamento não permanece apenas no estado interno do job do Flink, sendo materializado em uma estrutura persistente que pode ser consultada posteriormente.
+<img src="./docs/imagens/fontes/Screenshot from 2026-09-24 08-47-00.png"><br>
 
+---
+
+### Persistencia em Disco das Streaming
+
+Essas agregações são persistidas na tabela `ecommerce:realtime_alerts`. A integração entre o Flink e o HBase é realizada através do **HappyBase**, utilizando o **HBase Thrift Server na porta 9090**. Dessa forma, o resultado do processamento não permanece apenas no estado interno do job do Flink, sendo materializado em uma estrutura persistente que pode ser consultada posteriormente.
 
 <img src="./docs/imagens/fontes/Screenshot from 2026-09-24 08-47-43.png"><br>
 
 A consulta apresentada na figura confirma a persistência efetiva dos resultados produzidos pelo processamento do Flink. As linhas retornadas possuem o padrão `WINDOW_AGGREGATION` e estão associadas a diferentes clientes, demonstrando que as agregações foram materializadas individualmente na tabela `ecommerce:realtime_alerts`.
 
-Os dados armazenados na coluna `cf:metrics` preservam as métricas calculadas durante o processamento da janela, incluindo `window_start`, `window_end`, `event_count`, `unique_customers`, `total_quantity` e `total_amount`. O campo `metadata` também registra os tipos de eventos considerados na agregação.
-
-Dessa forma, o `scan` do HBase funciona como evidência da integração entre o processamento de streaming e a camada de persistência NoSQL, demonstrando que os resultados calculados pelo Flink foram efetivamente gravados e estão disponíveis para consulta após o processamento.
-
 ---
+
+# Data-Warehouse Consolidado
 
 ### Hive para Analise de Negocio
 
@@ -229,19 +221,11 @@ O Apache Hive é utilizado como camada de persistência e consulta analítica do
 
 Os resultados são persistidos no banco `ecommerce_dw`, que contém tabelas específicas para diferentes categorias de eventos e informações analíticas, incluindo `click_events`, `sales_events`, `delivery_events`, `cart_events` e `daily_sales_summary`.
 
-A comunicação com o Hive é realizada através do **HiveServer2**, permitindo que as tabelas geradas pelo processamento Spark sejam consultadas utilizando SQL. Essa camada separa o processamento distribuído realizado pelo Spark da etapa de consulta e exploração dos dados consolidados.
-
-Enquanto as tabelas de eventos mantêm os dados estruturados para análises detalhadas, a tabela `daily_sales_summary` representa uma camada agregada, contendo indicadores consolidados de vendas por data, como quantidade de pedidos, clientes únicos, itens vendidos, valor total das vendas e valor médio dos pedidos.
-
 <img src="./docs/imagens/fontes/hive.png"><br>
-
-A consulta apresentada na figura demonstra que os dados processados pelo Spark foram efetivamente persistidos no Data Warehouse `ecommerce_dw` e estão disponíveis para consulta através do HiveServer2.
 
 Na tabela `click_events`, os registros apresentam os atributos estruturados dos eventos de interação, incluindo `event_id`, `customer_id`, `event_timestamp`, `page`, `product_id`, `click_category` e `has_conversion_intent`. Isso demonstra a materialização dos dados de eventos após o processamento batch.
 
-A consulta sobre `daily_sales_summary` demonstra a etapa de agregação analítica do pipeline. Para a data `2026-09-24`, foram registrados 950 pedidos, 950 pedidos distintos, 950 clientes únicos e 2.858 itens, com volume total de vendas de `1.449.665,52` e valor médio por pedido de `1.525,96`.
-
-Esses resultados evidenciam que o processamento não se limita à ingestão dos eventos, mas também transforma os dados brutos em estruturas persistidas e indicadores analíticos que podem ser posteriormente consultados por SQL.
+A consulta sobre `daily_sales_summary` demonstra a etapa de agregação analítica do pipeline. Para a data `2026-09-24`, foram registrados **950 pedidos**, **950 pedidos distintos**, **950 clientes únicos** e **2.858 itens**, com volume total de vendas de `1.449.665,52` e valor médio por pedido de `1.525,96`.
 
 ---
 
