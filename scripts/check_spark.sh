@@ -3,55 +3,35 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-COMPOSE_FILE="${PROJECT_ROOT}/docker/docker-compose.yml"
+SPARK_JOB="${PROJECT_ROOT}/src/batch/insights_job.py"
+SPARK_CONFIG="${PROJECT_ROOT}/configs/spark/spark-defaults.conf"
 
 cd "${PROJECT_ROOT}"
 
 echo "=============================================="
-echo " Spark Health Check"
+echo " Spark Batch Job - Data Warehouse E-commerce"
 echo "=============================================="
 
-if ! command -v docker >/dev/null 2>&1; then
-    echo "Erro: Docker não encontrado no PATH."
+if ! command -v spark-submit >/dev/null 2>&1; then
+    echo "Erro: spark-submit não encontrado no PATH."
     exit 1
 fi
 
-if [[ ! -f "${COMPOSE_FILE}" ]]; then
-    echo "Erro: docker-compose.yml não encontrado:"
-    echo "${COMPOSE_FILE}"
+if [[ ! -f "${SPARK_JOB}" ]]; then
+    echo "Erro: job Spark não encontrado:"
+    echo "${SPARK_JOB}"
     exit 1
 fi
 
-echo "[1/3] Verificando container Spark..."
+export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
 
-docker compose \
-    -f "${COMPOSE_FILE}" \
-    ps spark
+echo "Job: ${SPARK_JOB}"
+echo "Iniciando processamento batch..."
 
-echo
-echo "[2/3] Verificando disponibilidade do Spark..."
-
-if ! docker compose \
-    -f "${COMPOSE_FILE}" \
-    exec -T spark \
-    spark-submit --version >/dev/null 2>&1; then
-    echo "Erro: Spark não respondeu corretamente."
-    exit 1
-fi
-
-echo "Spark operacional."
-
-echo
-echo "[3/3] Verificando configuração do Spark..."
-
-if docker compose \
-    -f "${COMPOSE_FILE}" \
-    exec -T spark \
-    test -f /opt/spark/conf/spark-defaults.conf; then
-    echo "OK: configuração do Spark encontrada."
+if [[ -f "${SPARK_CONFIG}" ]]; then
+    exec spark-submit \
+        --properties-file "${SPARK_CONFIG}" \
+        "${SPARK_JOB}" "$@"
 else
-    echo "Aviso: spark-defaults.conf não encontrado no container."
+    exec spark-submit "${SPARK_JOB}" "$@"
 fi
-
-echo
-echo "Spark operacional."
