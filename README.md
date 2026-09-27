@@ -28,7 +28,7 @@
 </p>
 
 <p align="center">
-  <a href="./docs/orientacion/principal.md">Equipe</a> • <a href="https://www.youtube.com/SEU_VIDEO">Video</a>
+  <a href="./docs/orientacion/principal.md">Equipe</a> • <a href="https://drive.google.com/file/d/1wdQVQeim85Nz_VSMNhRwlLejOXoi3WNE/view?usp=sharing">Video</a>
 </p>
 
 > **Documentação viva:** esta documentação encontra-se em evolução contínua e pode sofrer alterações conforme novos componentes, modelos são implementados.
@@ -76,7 +76,6 @@ Dessa forma, a arquitetura separa os dois padrões de processamento: o Flink ate
 | [`monitoring`](./src/monitoring/README.md) | Métricas, alertas e monitoramento da execução da pipeline. | MongoDB 
 | [`orchestration`](./src/orchestration/README.md) | Coordenação, execução e gerenciamento dos jobs de streaming e processamento batch da pipeline. | MongoDB 
 | [`config`](./configs/README.md) | Configurações dos serviços e componentes da infraestrutura Big Data. | MongoDB 
-
 
 ---
 
